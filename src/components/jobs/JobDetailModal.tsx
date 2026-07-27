@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   X,
   Calendar,
@@ -15,7 +15,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { YouTubeIcon } from '@/components/icons/YouTubeIcon';
-import { Job, PERFORMER_LABELS, STATUS_LABELS, CustomFieldDefinition } from '@/types/database';
+import { Job, PERFORMER_LABELS, STATUS_LABELS, CustomFieldDefinition, getJobPerformers } from '@/types/database';
 import { formatExternalUrl } from '@/utils/url';
 
 interface JobDetailModalProps {
@@ -31,9 +31,19 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   onClose,
   onEdit,
 }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   if (!job) return null;
 
-  const performerInfo = PERFORMER_LABELS[job.performer] || PERFORMER_LABELS.wagner;
+  const performers = getJobPerformers(job.performer);
   const statusInfo = STATUS_LABELS[job.status] || STATUS_LABELS.completed;
 
   const formattedValue = new Intl.NumberFormat('pt-BR', {
@@ -46,18 +56,30 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
     : '';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn">
-      <div className="theme-card border theme-border rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-8 shadow-2xl space-y-6">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="theme-card border theme-border rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-8 shadow-2xl space-y-6"
+      >
         {/* Modal Header */}
         <div className="flex items-start justify-between border-b theme-border pb-4">
           <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <span
-                className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${performerInfo.badgeColor} flex items-center space-x-1`}
-              >
-                <UserCheck className="h-3 w-3" />
-                <span>{performerInfo.label}</span>
-              </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {performers.map((pKey) => {
+                const performerInfo = PERFORMER_LABELS[pKey] || PERFORMER_LABELS.wagner;
+                return (
+                  <span
+                    key={pKey}
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${performerInfo.badgeColor} flex items-center space-x-1`}
+                  >
+                    <UserCheck className="h-3 w-3" />
+                    <span>{performerInfo.label}</span>
+                  </span>
+                );
+              })}
               <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${statusInfo.color}`}>
                 {statusInfo.label}
               </span>
@@ -144,7 +166,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   <YouTubeIcon className="h-5 w-5" />
                   <div>
                     <span className="text-xs font-bold block">YouTube</span>
-                    <span className="text-[11px] opacity-80">Assistir vídeo / reel</span>
+                    <span className="text-[11px] opacity-80">Assistir vídeo</span>
                   </div>
                 </div>
                 <ExternalLink className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />

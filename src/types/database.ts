@@ -1,5 +1,17 @@
 export type PerformerType = 'wagner' | 'daiana' | 'aflora' | 'joint';
 
+export function getJobPerformers(performer?: string | PerformerType[] | null): PerformerType[] {
+  if (!performer) return ['wagner'];
+  if (Array.isArray(performer)) {
+    return performer.length > 0 ? (performer as PerformerType[]) : ['wagner'];
+  }
+  const split = String(performer)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean) as PerformerType[];
+  return split.length > 0 ? split : ['wagner'];
+}
+
 export const PERFORMER_LABELS: Record<PerformerType, { label: string; badgeColor: string; description: string }> = {
   wagner: {
     label: 'Wagner (Fotografia)',
@@ -62,7 +74,7 @@ export interface Job {
   id: string;
   title: string;
   client_name?: string | null;
-  performer: PerformerType;
+  performer: PerformerType | string;
   job_date: string;
   location?: string | null;
   drive_url?: string | null;
@@ -80,7 +92,7 @@ export interface Job {
 export interface JobFormData {
   title: string;
   client_name: string;
-  performer: PerformerType;
+  performer: PerformerType | string;
   job_date: string;
   location: string;
   drive_url: string;

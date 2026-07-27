@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Sliders } from 'lucide-react';
 import { CustomFieldType } from '@/types/database';
 
@@ -19,6 +19,17 @@ export const CustomFieldModal: React.FC<CustomFieldModalProps> = ({
   const [fieldType, setFieldType] = useState<CustomFieldType>('text');
   const [optionsStr, setOptionsStr] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -52,8 +63,14 @@ export const CustomFieldModal: React.FC<CustomFieldModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-      <div className="theme-card border theme-border rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="theme-card border theme-border rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5"
+      >
         <div className="flex items-center justify-between border-b theme-border pb-3">
           <div className="flex items-center space-x-2">
             <Sliders className="h-5 w-5 text-indigo-500" />

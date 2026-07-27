@@ -23,7 +23,7 @@ import {
   TrendingUp,
   Award,
 } from 'lucide-react';
-import { Job, CommercialCategory, JobTag, PERFORMER_LABELS } from '@/types/database';
+import { Job, CommercialCategory, JobTag, PERFORMER_LABELS, getJobPerformers } from '@/types/database';
 
 interface AnalyticsDashboardProps {
   jobs: Job[];
@@ -41,10 +41,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   const totalJobs = jobs.length;
   const totalValue = jobs.reduce((acc, j) => acc + (j.value || 0), 0);
 
-  const wagnerCount = jobs.filter((j) => j.performer === 'wagner').length;
-  const daianaCount = jobs.filter((j) => j.performer === 'daiana').length;
-  const afloraCount = jobs.filter((j) => j.performer === 'aflora').length;
-  const jointCount = jobs.filter((j) => j.performer === 'joint').length;
+  const wagnerCount = jobs.filter((j) => getJobPerformers(j.performer).includes('wagner')).length;
+  const daianaCount = jobs.filter((j) => getJobPerformers(j.performer).includes('daiana')).length;
+  const afloraCount = jobs.filter((j) => getJobPerformers(j.performer).includes('aflora')).length;
+  const jointCount = jobs.filter((j) => getJobPerformers(j.performer).includes('joint')).length;
 
   const driveCount = jobs.filter((j) => Boolean(j.drive_url)).length;
   const drivePercentage = totalJobs > 0 ? Math.round((driveCount / totalJobs) * 100) : 0;

@@ -16,6 +16,7 @@ import {
   Job,
   PERFORMER_LABELS,
   STATUS_LABELS,
+  getJobPerformers,
 } from '@/types/database';
 import { formatExternalUrl } from '@/utils/url';
 
@@ -32,7 +33,7 @@ export const JobCard: React.FC<JobCardProps> = ({
   onDelete,
   onViewDetails,
 }) => {
-  const performerInfo = PERFORMER_LABELS[job.performer] || PERFORMER_LABELS.wagner;
+  const performers = getJobPerformers(job.performer);
   const statusInfo = STATUS_LABELS[job.status] || STATUS_LABELS.completed;
 
   const formattedValue = new Intl.NumberFormat('pt-BR', {
@@ -45,26 +46,36 @@ export const JobCard: React.FC<JobCardProps> = ({
     : '';
 
   return (
-    <div className="glass-card rounded-2xl p-5 flex flex-col justify-between space-y-4 theme-border hover:border-indigo-500/50 group transition-all">
-      {/* Card Header: Performer Badge & Status */}
+    <div
+      onClick={() => onViewDetails(job)}
+      className="glass-card rounded-2xl p-5 flex flex-col justify-between space-y-4 theme-border hover:border-indigo-500/50 group transition-all cursor-pointer"
+    >
+      {/* Card Header: Performer Badges & Status */}
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <span
-            className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${performerInfo.badgeColor} flex items-center space-x-1`}
-          >
-            <UserCheck className="h-3 w-3" />
-            <span>{performerInfo.label}</span>
-          </span>
+          <div className="flex flex-wrap gap-1 items-center">
+            {performers.map((pKey) => {
+              const performerInfo = PERFORMER_LABELS[pKey] || PERFORMER_LABELS.wagner;
+              return (
+                <span
+                  key={pKey}
+                  className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${performerInfo.badgeColor} flex items-center space-x-1`}
+                >
+                  <UserCheck className="h-3 w-3" />
+                  <span>{performerInfo.label}</span>
+                </span>
+              );
+            })}
+          </div>
 
-          <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full border ${statusInfo.color}`}>
+          <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full border ${statusInfo.color} shrink-0`}>
             {statusInfo.label}
           </span>
         </div>
 
         {/* Title & Client */}
         <h3
-          onClick={() => onViewDetails(job)}
-          className="text-base font-bold theme-text group-hover:text-indigo-500 cursor-pointer line-clamp-2 transition-colors pt-1"
+          className="text-base font-bold theme-text group-hover:text-indigo-500 transition-colors pt-1"
         >
           {job.title}
         </h3>
@@ -167,21 +178,28 @@ export const JobCard: React.FC<JobCardProps> = ({
         {/* Action icons */}
         <div className="flex items-center space-x-1">
           <button
-            onClick={() => onViewDetails(job)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails(job);
+            }}
             className="p-1.5 theme-text-muted hover:theme-text hover:bg-zinc-500/10 rounded-lg transition"
             title="Ver Detalhes"
           >
             <Eye className="h-4 w-4" />
           </button>
           <button
-            onClick={() => onEdit(job)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(job);
+            }}
             className="p-1.5 theme-text-muted hover:text-indigo-500 hover:bg-zinc-500/10 rounded-lg transition"
             title="Editar Trabalho"
           >
             <Edit2 className="h-4 w-4" />
           </button>
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               if (confirm(`Tem certeza que deseja excluir "${job.title}"?`)) {
                 onDelete(job.id);
               }

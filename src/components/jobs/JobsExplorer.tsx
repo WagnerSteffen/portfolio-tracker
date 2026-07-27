@@ -15,6 +15,9 @@ import {
   Eye,
   Edit2,
   Trash2,
+  User,
+  Tag,
+  Folder,
 } from 'lucide-react';
 import { YouTubeIcon } from '@/components/icons/YouTubeIcon';
 import {
@@ -25,10 +28,13 @@ import {
   CustomFieldDefinition,
   PERFORMER_LABELS,
   STATUS_LABELS,
+  getJobPerformers,
 } from '@/types/database';
 import { JobCard } from './JobCard';
 import { JobDetailModal } from './JobDetailModal';
 import { formatExternalUrl } from '@/utils/url';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { CustomSelect, SelectOption } from '@/components/ui/Select';
 
 interface JobsExplorerProps {
   jobs: Job[];
@@ -41,6 +47,7 @@ interface JobsExplorerProps {
 }
 
 type SortOption = 'date_desc' | 'date_asc' | 'value_desc' | 'title_asc';
+type DateFilterMode = 'all' | 'this_year' | 'last_12_months' | 'specific_year' | 'custom_range';
 
 export const JobsExplorer: React.FC<JobsExplorerProps> = ({
   jobs,
@@ -60,9 +67,30 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [onlyDrive, setOnlyDrive] = useState(false);
   const [onlyYoutube, setOnlyYoutube] = useState(false);
+
+  // Date Filter States
+  const [dateFilterMode, setDateFilterMode] = useState<DateFilterMode>('all');
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+
   const [showFiltersMobile, setShowFiltersMobile] = useState(false);
 
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+
+  // Extract unique available years from jobs
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    const currentYear = new Date().getFullYear();
+    years.add(currentYear);
+    jobs.forEach((j) => {
+      if (j.job_date) {
+        const y = new Date(j.job_date + 'T00:00:00').getFullYear();
+        if (!isNaN(y)) years.add(y);
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [jobs]);
 
   const togglePerformer = (p: PerformerType) => {
     setSelectedPerformers((prev) =>
@@ -89,6 +117,10 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
     setSelectedTagIds([]);
     setOnlyDrive(false);
     setOnlyYoutube(false);
+    setDateFilterMode('all');
+    setSelectedYear(new Date().getFullYear());
+    setStartDate('');
+    setEndDate('');
   };
 
   const hasActiveFilters =
@@ -97,7 +129,8 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
     selectedCategoryIds.length > 0 ||
     selectedTagIds.length > 0 ||
     onlyDrive ||
-    onlyYoutube;
+    onlyYoutube ||
+    dateFilterMode !== 'all';
 
   const filteredAndSortedJobs = useMemo(() => {
     return jobs
@@ -113,8 +146,10 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
           }
         }
 
-        if (selectedPerformers.length > 0 && !selectedPerformers.includes(job.performer)) {
-          return false;
+        if (selectedPerformers.length > 0) {
+          const jobPerformers = getJobPerformers(job.performer);
+          const hasPerformer = selectedPerformers.some((p) => jobPerformers.includes(p));
+          if (!hasPerformer) return false;
         }
 
         if (selectedCategoryIds.length > 0) {
@@ -132,6 +167,32 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
         if (onlyDrive && !job.drive_url) return false;
 
         if (onlyYoutube && !job.youtube_url) return false;
+
+        // Date Filter Evaluation
+        if (dateFilterMode !== 'all') {
+          if (!job.job_date) return false;
+          const jobDateObj = new Date(job.job_date + 'T00:00:00');
+          const now = new Date();
+
+          if (dateFilterMode === 'this_year') {
+            if (jobDateObj.getFullYear() !== now.getFullYear()) return false;
+          } else if (dateFilterMode === 'last_12_months') {
+            const twelveMonthsAgo = new Date();
+            twelveMonthsAgo.setFullYear(now.getFullYear() - 1);
+            if (jobDateObj < twelveMonthsAgo) return false;
+          } else if (dateFilterMode === 'specific_year') {
+            if (jobDateObj.getFullYear() !== Number(selectedYear)) return false;
+          } else if (dateFilterMode === 'custom_range') {
+            if (startDate) {
+              const startObj = new Date(startDate + 'T00:00:00');
+              if (jobDateObj < startObj) return false;
+            }
+            if (endDate) {
+              const endObj = new Date(endDate + 'T23:59:59');
+              if (jobDateObj > endObj) return false;
+            }
+          }
+        }
 
         return true;
       })
@@ -158,36 +219,113 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
     selectedTagIds,
     onlyDrive,
     onlyYoutube,
-    sortBy,
+    dateFilterMode,
+    selectedYear,
+    startDate,
   ]);
+
+  // Options for Shadcn CustomSelect Dropdowns
+  const performerOptions: SelectOption[] = useMemo(
+    () => [
+      { value: 'all', label: 'Todos os Executantes' },
+      ...((['wagner', 'daiana', 'aflora', 'joint'] as PerformerType[]).map((p) => ({
+        value: p,
+        label: PERFORMER_LABELS[p].label,
+      }))),
+    ],
+    []
+  );
+
+  const categoryOptions: SelectOption[] = useMemo(
+    () => [
+      { value: 'all', label: 'Todas as Categorias' },
+      ...categories.map((cat) => ({
+        value: cat.id,
+        label: cat.name,
+      })),
+    ],
+    [categories]
+  );
+
+  const tagOptions: SelectOption[] = useMemo(
+    () => [
+      { value: 'all', label: 'Todas as Tags' },
+      ...tags.map((tag) => ({
+        value: tag.id,
+        label: `#${tag.name}`,
+      })),
+    ],
+    [tags]
+  );
+
+  const dateOptions: SelectOption[] = useMemo(
+    () => [
+      { value: 'all', label: 'Todas as Datas' },
+      { value: 'this_year', label: `Este Ano (${new Date().getFullYear()})` },
+      { value: 'last_12_months', label: 'Últimos 12 Meses' },
+      { value: 'specific_year', label: 'Ano Específico...' },
+      { value: 'custom_range', label: 'Intervalo (Range)...' },
+    ],
+    []
+  );
+
+  const yearOptions: SelectOption[] = useMemo(
+    () =>
+      availableYears.map((y) => ({
+        value: String(y),
+        label: `Ano ${y}`,
+      })),
+    [availableYears]
+  );
+
+  const mediaOptions: SelectOption[] = useMemo(
+    () => [
+      { value: 'all', label: 'Todas as Mídias' },
+      { value: 'drive', label: 'Com Google Drive' },
+      { value: 'youtube', label: 'Com YouTube' },
+      { value: 'both', label: 'Com Drive & YouTube' },
+    ],
+    []
+  );
+
+  const sortSelectOptions: SelectOption[] = useMemo(
+    () => [
+      { value: 'date_desc', label: 'Mais Recentes' },
+      { value: 'date_asc', label: 'Mais Antigos' },
+      { value: 'value_desc', label: 'Maior Valor R$' },
+      { value: 'title_asc', label: 'Título A-Z' },
+    ],
+    []
+  );
 
   return (
     <div className="space-y-6">
       {/* Top Search & Filter Bar */}
       <div className="glass-panel p-4 md:p-6 rounded-2xl border theme-border space-y-4">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Search Input */}
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 theme-text-muted" />
+        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+          {/* Search Bar */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 theme-text-muted" />
             <input
               type="text"
-              placeholder="Buscar por título, cliente, local..."
+              placeholder="Buscar por título, cliente, local ou descrição..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full theme-input border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
+              className="w-full theme-input border rounded-xl pl-10 pr-9 py-2.5 text-xs md:text-sm focus:outline-none focus:border-indigo-500 shadow-sm"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-3 theme-text-muted hover:theme-text"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs theme-text-muted hover:theme-text"
               >
                 <X className="h-4 w-4" />
               </button>
             )}
           </div>
 
-          {/* Controls */}
-          <div className="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-end">
+          {/* Controls: View Mode, Sort, Mobile Filter, Add New */}
+          <div className="flex items-center space-x-2 shrink-0">
+            {/* View Mode Toggle */}
             <div className="flex items-center theme-input p-1 rounded-xl border theme-border">
               <button
                 onClick={() => setViewMode('grid')}
@@ -210,24 +348,19 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
             </div>
 
             {/* Sort Select */}
-            <div className="flex items-center space-x-1.5 theme-input px-3 py-1.5 rounded-xl border theme-border text-xs">
-              <ArrowUpDown className="h-3.5 w-3.5 theme-text-muted" />
-              <select
+            <div className="w-40">
+              <CustomSelect
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="bg-transparent theme-text focus:outline-none cursor-pointer"
-              >
-                <option value="date_desc" className="theme-card">Mais Recentes</option>
-                <option value="date_asc" className="theme-card">Mais Antigos</option>
-                <option value="value_desc" className="theme-card">Maior Valor R$</option>
-                <option value="title_asc" className="theme-card">Título A-Z</option>
-              </select>
+                onChange={(val) => setSortBy(val as SortOption)}
+                options={sortSelectOptions}
+                icon={<ArrowUpDown className="h-3.5 w-3.5" />}
+              />
             </div>
 
             {/* Mobile Filter Toggle */}
             <button
               onClick={() => setShowFiltersMobile(!showFiltersMobile)}
-              className="md:hidden flex items-center space-x-1 px-3 py-1.5 theme-card border theme-border rounded-xl text-xs theme-text"
+              className="md:hidden flex items-center space-x-1 px-3 py-2 theme-card border theme-border rounded-xl text-xs theme-text"
             >
               <Filter className="h-3.5 w-3.5" />
               <span>Filtros</span>
@@ -239,13 +372,13 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
               className="hidden sm:flex items-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition"
             >
               <PlusCircle className="h-4 w-4" />
-              <span>Novo Trabalho</span>
+              <span>Novo</span>
             </button>
           </div>
         </div>
 
         {/* Filter Pills / Multi-Filter Bar */}
-        <div className={`space-y-3 pt-3 border-t theme-border ${showFiltersMobile ? 'block' : 'hidden md:block'}`}>
+        <div className={`space-y-4 pt-3 border-t theme-border ${showFiltersMobile ? 'block' : 'hidden md:block'}`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs font-bold theme-text-muted uppercase tracking-wider">Filtros Avançados:</span>
             {hasActiveFilters && (
@@ -258,102 +391,129 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Performer Filter */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-start">
+            {/* 1. Performer Filter Dropdown */}
             <div>
-              <span className="text-[11px] theme-text-muted font-semibold uppercase block mb-1.5">Quem fez?</span>
-              <div className="flex flex-wrap gap-1">
-                {(['wagner', 'daiana', 'aflora', 'joint'] as PerformerType[]).map((p) => {
-                  const isSel = selectedPerformers.includes(p);
-                  return (
-                    <button
-                      key={p}
-                      onClick={() => togglePerformer(p)}
-                      className={`text-xs px-2.5 py-1 rounded-lg border transition ${
-                        isSel
-                          ? 'bg-indigo-600 text-white border-indigo-500'
-                          : 'theme-input theme-text-muted theme-border hover:theme-text'
-                      }`}
-                    >
-                      {PERFORMER_LABELS[p].label.split(' ')[0]}
-                    </button>
-                  );
-                })}
+              <span className="text-[11px] theme-text-muted font-semibold uppercase block mb-1.5 flex items-center gap-1">
+                <User className="h-3.5 w-3.5 text-indigo-500" />
+                Quem fez?
+              </span>
+              <CustomSelect
+                value={selectedPerformers.length === 1 ? selectedPerformers[0] : 'all'}
+                onChange={(val) => {
+                  if (val === 'all') setSelectedPerformers([]);
+                  else setSelectedPerformers([val as PerformerType]);
+                }}
+                options={performerOptions}
+              />
+            </div>
+
+            {/* 2. Commercial Category Filter Dropdown */}
+            <div>
+              <span className="text-[11px] theme-text-muted font-semibold uppercase block mb-1.5 flex items-center gap-1">
+                <Folder className="h-3.5 w-3.5 text-indigo-500" />
+                Categorias
+              </span>
+              <CustomSelect
+                value={selectedCategoryIds.length === 1 ? selectedCategoryIds[0] : 'all'}
+                onChange={(val) => {
+                  if (val === 'all') setSelectedCategoryIds([]);
+                  else setSelectedCategoryIds([val]);
+                }}
+                options={categoryOptions}
+              />
+            </div>
+
+            {/* 3. Tags Filter Dropdown */}
+            <div>
+              <span className="text-[11px] theme-text-muted font-semibold uppercase block mb-1.5 flex items-center gap-1">
+                <Tag className="h-3.5 w-3.5 text-indigo-500" />
+                Tags
+              </span>
+              <CustomSelect
+                value={selectedTagIds.length === 1 ? selectedTagIds[0] : 'all'}
+                onChange={(val) => {
+                  if (val === 'all') setSelectedTagIds([]);
+                  else setSelectedTagIds([val]);
+                }}
+                options={tagOptions}
+              />
+            </div>
+
+            {/* 4. Date / Period Filter Dropdown */}
+            <div>
+              <span className="text-[11px] theme-text-muted font-semibold uppercase block mb-1.5 flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5 text-indigo-500" />
+                Período / Data
+              </span>
+              <div className="space-y-2">
+                <CustomSelect
+                  value={dateFilterMode}
+                  onChange={(val) => setDateFilterMode(val as DateFilterMode)}
+                  options={dateOptions}
+                />
+
+                {/* Sub-controls for Specific Year */}
+                {dateFilterMode === 'specific_year' && (
+                  <div className="flex items-center space-x-1.5 animate-fadeIn">
+                    <span className="text-[11px] theme-text-muted font-medium shrink-0">Ano:</span>
+                    <CustomSelect
+                      value={String(selectedYear)}
+                      onChange={(val) => setSelectedYear(Number(val))}
+                      options={yearOptions}
+                    />
+                  </div>
+                )}
+
+                {/* Sub-controls for Custom Range */}
+                {dateFilterMode === 'custom_range' && (
+                  <div className="space-y-1.5 animate-fadeIn text-xs">
+                    <div>
+                      <span className="text-[10px] theme-text-muted font-medium block mb-0.5">De:</span>
+                      <DatePicker value={startDate} onChange={setStartDate} placeholder="Data inicial..." />
+                    </div>
+                    <div>
+                      <span className="text-[10px] theme-text-muted font-medium block mb-0.5">Até:</span>
+                      <DatePicker value={endDate} onChange={setEndDate} placeholder="Data final..." />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Commercial Category Filter */}
+            {/* 5. Media Availability Filter Dropdown */}
             <div>
-              <span className="text-[11px] theme-text-muted font-semibold uppercase block mb-1.5">Categorias</span>
-              <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pr-1">
-                {categories.map((cat) => {
-                  const isSel = selectedCategoryIds.includes(cat.id);
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => toggleCategoryFilter(cat.id)}
-                      className={`text-xs px-2 py-0.5 rounded-md border transition ${
-                        isSel
-                          ? 'bg-indigo-600 text-white border-indigo-500'
-                          : 'theme-input theme-text-muted theme-border hover:theme-text'
-                      }`}
-                    >
-                      {cat.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Tags Filter */}
-            <div>
-              <span className="text-[11px] theme-text-muted font-semibold uppercase block mb-1.5">Tags</span>
-              <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pr-1">
-                {tags.map((tag) => {
-                  const isSel = selectedTagIds.includes(tag.id);
-                  return (
-                    <button
-                      key={tag.id}
-                      onClick={() => toggleTagFilter(tag.id)}
-                      className={`text-[11px] px-2 py-0.5 rounded-md border transition ${
-                        isSel
-                          ? 'bg-purple-600 text-white border-purple-500'
-                          : 'theme-input theme-text-muted theme-border hover:theme-text'
-                      }`}
-                    >
-                      #{tag.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Portfolio Links toggles */}
-            <div>
-              <span className="text-[11px] theme-text-muted font-semibold uppercase block mb-1.5">Mídia Disponível</span>
-              <div className="flex items-center space-x-3 text-xs pt-1">
-                <label className="flex items-center space-x-1.5 theme-text cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={onlyDrive}
-                    onChange={(e) => setOnlyDrive(e.target.checked)}
-                    className="rounded theme-input text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <FolderPlus className="h-3.5 w-3.5 text-emerald-500" />
-                  <span>Com Drive</span>
-                </label>
-
-                <label className="flex items-center space-x-1.5 theme-text cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={onlyYoutube}
-                    onChange={(e) => setOnlyYoutube(e.target.checked)}
-                    className="rounded theme-input text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <YouTubeIcon className="h-3.5 w-3.5 text-red-500" />
-                  <span>Com YouTube</span>
-                </label>
-              </div>
+              <span className="text-[11px] theme-text-muted font-semibold uppercase block mb-1.5 flex items-center gap-1">
+                <FolderPlus className="h-3.5 w-3.5 text-indigo-500" />
+                Mídia Disponível
+              </span>
+              <CustomSelect
+                value={
+                  onlyDrive && onlyYoutube
+                    ? 'both'
+                    : onlyDrive
+                    ? 'drive'
+                    : onlyYoutube
+                    ? 'youtube'
+                    : 'all'
+                }
+                onChange={(val) => {
+                  if (val === 'all') {
+                    setOnlyDrive(false);
+                    setOnlyYoutube(false);
+                  } else if (val === 'drive') {
+                    setOnlyDrive(true);
+                    setOnlyYoutube(false);
+                  } else if (val === 'youtube') {
+                    setOnlyDrive(false);
+                    setOnlyYoutube(true);
+                  } else if (val === 'both') {
+                    setOnlyDrive(true);
+                    setOnlyYoutube(true);
+                  }
+                }}
+                options={mediaOptions}
+              />
             </div>
           </div>
         </div>
@@ -403,7 +563,7 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
                 </thead>
                 <tbody className="divide-y theme-border">
                   {filteredAndSortedJobs.map((job) => {
-                    const perf = PERFORMER_LABELS[job.performer] || PERFORMER_LABELS.wagner;
+                    const jobPerformers = getJobPerformers(job.performer);
                     const formattedValue = new Intl.NumberFormat('pt-BR', {
                       style: 'currency',
                       currency: 'BRL',
@@ -423,9 +583,19 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${perf.badgeColor}`}>
-                            {perf.label.split(' ')[0]}
-                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {jobPerformers.map((pKey) => {
+                              const perf = PERFORMER_LABELS[pKey] || PERFORMER_LABELS.wagner;
+                              return (
+                                <span
+                                  key={pKey}
+                                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${perf.badgeColor}`}
+                                >
+                                  {perf.label.split(' ')[0]}
+                                </span>
+                              );
+                            })}
+                          </div>
                         </td>
                         <td className="py-3 px-4 theme-text-muted whitespace-nowrap">
                           {job.job_date ? new Date(job.job_date + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}

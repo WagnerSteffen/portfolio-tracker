@@ -362,7 +362,7 @@ export async function getJobs(): Promise<Job[]> {
 export async function createJob(formData: JobFormData): Promise<Job> {
   if (isSupabaseConfigured() && supabase) {
     // 1. Insert main job record
-    const { data: newJob, error: jobError } = await supabase
+    let { data: newJob, error: jobError } = await supabase
       .from('jobs')
       .insert([
         {
@@ -381,6 +381,34 @@ export async function createJob(formData: JobFormData): Promise<Job> {
       ])
       .select()
       .single();
+
+    // Catch Postgres CHECK constraint error (jobs_performer_check) and fallback to 'joint'
+    if (jobError && (jobError.code === '23514' || String(jobError.message).includes('jobs_performer_check'))) {
+      console.warn(
+        'Supabase jobs_performer_check constraint triggered. Falling back performer to "joint". To allow multi-performer strings in Postgres, run in Supabase SQL Editor: ALTER TABLE jobs DROP CONSTRAINT IF EXISTS jobs_performer_check;'
+      );
+      const retryResult = await supabase
+        .from('jobs')
+        .insert([
+          {
+            title: formData.title,
+            client_name: formData.client_name,
+            performer: 'joint',
+            job_date: formData.job_date,
+            location: formData.location,
+            drive_url: formData.drive_url,
+            youtube_url: formData.youtube_url,
+            value: formData.value,
+            status: formData.status,
+            description: formData.description,
+            custom_fields: formData.custom_fields,
+          },
+        ])
+        .select()
+        .single();
+      newJob = retryResult.data;
+      jobError = retryResult.error;
+    }
 
     if (jobError) throw jobError;
 
@@ -439,7 +467,7 @@ export async function createJob(formData: JobFormData): Promise<Job> {
 export async function updateJob(id: string, formData: JobFormData): Promise<Job> {
   if (isSupabaseConfigured() && supabase) {
     // 1. Update job details
-    const { error: updateError } = await supabase
+    let { error: updateError } = await supabase
       .from('jobs')
       .update({
         title: formData.title,
@@ -456,6 +484,30 @@ export async function updateJob(id: string, formData: JobFormData): Promise<Job>
         updated_at: new Date().toISOString(),
       })
       .eq('id', id);
+
+    if (updateError && (updateError.code === '23514' || String(updateError.message).includes('jobs_performer_check'))) {
+      console.warn(
+        'Supabase jobs_performer_check constraint triggered. Falling back performer to "joint". To allow multi-performer strings in Postgres, run in Supabase SQL Editor: ALTER TABLE jobs DROP CONSTRAINT IF EXISTS jobs_performer_check;'
+      );
+      const retryResult = await supabase
+        .from('jobs')
+        .update({
+          title: formData.title,
+          client_name: formData.client_name,
+          performer: 'joint',
+          job_date: formData.job_date,
+          location: formData.location,
+          drive_url: formData.drive_url,
+          youtube_url: formData.youtube_url,
+          value: formData.value,
+          status: formData.status,
+          description: formData.description,
+          custom_fields: formData.custom_fields,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id);
+      updateError = retryResult.error;
+    }
 
     if (updateError) throw updateError;
 

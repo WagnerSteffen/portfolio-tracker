@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS public.jobs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
     client_name TEXT,
-    performer TEXT NOT NULL CHECK (performer IN ('wagner', 'daiana', 'aflora', 'joint')),
+    performer TEXT NOT NULL,
     job_date DATE NOT NULL DEFAULT CURRENT_DATE,
     location TEXT,
     drive_url TEXT,

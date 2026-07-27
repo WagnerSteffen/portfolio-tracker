@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FolderPlus,
   Plus,
@@ -27,10 +27,14 @@ import {
   JobStatus,
   PERFORMER_LABELS,
   STATUS_LABELS,
+  getJobPerformers,
 } from '@/types/database';
 import { CategoryTagModal } from './CategoryTagModal';
 import { CustomFieldModal } from './CustomFieldModal';
 import { formatExternalUrl } from '@/utils/url';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { ClientCombobox } from '@/components/ui/ClientCombobox';
+import { getJobs } from '@/lib/supabase/api';
 
 interface JobFormProps {
   initialData?: Job | null;
@@ -60,16 +64,92 @@ export const JobForm: React.FC<JobFormProps> = ({
   onCreateCustomField,
   onCancel,
 }) => {
+  const formatBRLCurrency = (val: number) => {
+    if (!val || val === 0) return '';
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(val);
+  };
+
   const [title, setTitle] = useState(initialData?.title || '');
   const [clientName, setClientName] = useState(initialData?.client_name || '');
-  const [performer, setPerformer] = useState<PerformerType>(initialData?.performer || 'wagner');
+  const [performers, setPerformers] = useState<PerformerType[]>(
+    getJobPerformers(initialData?.performer)
+  );
+
+  useEffect(() => {
+    if (initialData) {
+      setPerformers(getJobPerformers(initialData.performer));
+    }
+  }, [initialData]);
+
+  const togglePerformer = (pKey: PerformerType) => {
+    setPerformers((prev) => {
+      if (prev.includes(pKey)) {
+        if (prev.length <= 1) return prev; // Keep at least one performer selected
+        return prev.filter((k) => k !== pKey);
+      }
+      return [...prev, pKey];
+    });
+  };
+
   const [jobDate, setJobDate] = useState(initialData?.job_date || new Date().toISOString().split('T')[0]);
   const [location, setLocation] = useState(initialData?.location || '');
   const [driveUrl, setDriveUrl] = useState(initialData?.drive_url || '');
   const [youtubeUrl, setYoutubeUrl] = useState(initialData?.youtube_url || '');
   const [value, setValue] = useState<number>(initialData?.value || 0);
+  const [valueDisplay, setValueDisplay] = useState<string>(
+    initialData?.value ? formatBRLCurrency(initialData.value) : ''
+  );
   const [status, setStatus] = useState<JobStatus>(initialData?.status || 'completed');
   const [description, setDescription] = useState(initialData?.description || '');
+
+  const [clientOptions, setClientOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    getJobs()
+      .then((jobsList) => {
+        if (!isMounted) return;
+        const uniqueClients = Array.from(
+          new Set(jobsList.map((j) => j.client_name?.trim()).filter(Boolean) as string[])
+        ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        setClientOptions(uniqueClients);
+      })
+      .catch((err) => console.error('Error fetching clients for combobox:', err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (initialData?.value) {
+      setValue(initialData.value);
+      setValueDisplay(formatBRLCurrency(initialData.value));
+    } else if (!initialData) {
+      setValue(0);
+      setValueDisplay('');
+    }
+  }, [initialData]);
+
+  const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawInput = e.target.value.replace(/\D/g, '');
+    if (!rawInput) {
+      setValue(0);
+      setValueDisplay('');
+      return;
+    }
+    const numericValue = parseFloat(rawInput) / 100;
+    setValue(numericValue);
+    setValueDisplay(
+      new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }).format(numericValue)
+    );
+  };
 
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
     initialData?.categories?.map((c) => c.id) || []
@@ -111,7 +191,7 @@ export const JobForm: React.FC<JobFormProps> = ({
       const formData: JobFormData = {
         title: title.trim(),
         client_name: clientName.trim(),
-        performer,
+        performer: performers.join(','),
         job_date: jobDate,
         location: location.trim(),
         drive_url: formatExternalUrl(driveUrl),
@@ -131,10 +211,12 @@ export const JobForm: React.FC<JobFormProps> = ({
       if (!initialData) {
         setTitle('');
         setClientName('');
+        setPerformers(['wagner']);
         setLocation('');
         setDriveUrl('');
         setYoutubeUrl('');
         setValue(0);
+        setValueDisplay('');
         setDescription('');
         setSelectedCategoryIds([]);
         setSelectedTagIds([]);
@@ -208,34 +290,42 @@ export const JobForm: React.FC<JobFormProps> = ({
               <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
                 Nome do Cliente / Empresa
               </label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 theme-text-muted" />
-                <input
-                  type="text"
-                  placeholder="Ex: Ana Clara ou Marca X"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  className="w-full theme-input border rounded-xl pl-9 pr-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
-                />
-              </div>
+              <ClientCombobox
+                value={clientName}
+                onChange={setClientName}
+                clients={clientOptions}
+                placeholder="Ex: Ana Clara ou Marca X"
+              />
             </div>
 
-            {/* Performer */}
-            <div>
-              <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
-                Executado por (Quem realizou) *
+            {/* Performer (Multi-Select) */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                <span>Executado por (Quem realizou) *</span>
+                <span className="text-[10px] theme-text-muted font-normal">Pode selecionar múltiplos</span>
               </label>
-              <select
-                value={performer}
-                onChange={(e) => setPerformer(e.target.value as PerformerType)}
-                className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
-              >
-                {Object.entries(PERFORMER_LABELS).map(([key, val]) => (
-                  <option key={key} value={key}>
-                    {val.label}
-                  </option>
-                ))}
-              </select>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {Object.entries(PERFORMER_LABELS).map(([key, val]) => {
+                  const pKey = key as PerformerType;
+                  const isSelected = performers.includes(pKey);
+                  return (
+                    <button
+                      key={pKey}
+                      type="button"
+                      onClick={() => togglePerformer(pKey)}
+                      className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition border ${
+                        isSelected
+                          ? `${val.badgeColor} ring-2 ring-indigo-500/30 shadow-sm`
+                          : 'theme-card-subtle theme-text-muted theme-border hover:theme-text'
+                      }`}
+                    >
+                      <User className="h-3.5 w-3.5" />
+                      <span>{val.label}</span>
+                      {isSelected && <Check className="h-3.5 w-3.5 ml-1 text-indigo-400" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Job Date */}
@@ -243,16 +333,11 @@ export const JobForm: React.FC<JobFormProps> = ({
               <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
                 Data do Trabalho / Evento *
               </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-3 h-4 w-4 theme-text-muted" />
-                <input
-                  type="date"
-                  required
-                  value={jobDate}
-                  onChange={(e) => setJobDate(e.target.value)}
-                  className="w-full theme-input border rounded-xl pl-9 pr-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
-                />
-              </div>
+              <DatePicker
+                value={jobDate}
+                onChange={setJobDate}
+                required
+              />
             </div>
 
             {/* Location */}
@@ -296,15 +381,14 @@ export const JobForm: React.FC<JobFormProps> = ({
                 Valor Comercial / Orçamento (R$)
               </label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 theme-text-muted" />
+                <DollarSign className="absolute left-3 top-3 h-4 w-4 theme-text-muted pointer-events-none" />
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={value || ''}
-                  onChange={(e) => setValue(parseFloat(e.target.value) || 0)}
-                  className="w-full theme-input border rounded-xl pl-9 pr-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="R$ 0,00"
+                  value={valueDisplay}
+                  onChange={handleCurrencyChange}
+                  className="w-full theme-input border rounded-xl pl-9 pr-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 font-medium"
                 />
               </div>
             </div>
