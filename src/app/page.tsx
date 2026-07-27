@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Navbar, TabType } from "@/components/layout/Navbar";
 import { JobsExplorer } from "@/components/jobs/JobsExplorer";
 import { JobForm } from "@/components/jobs/JobForm";
@@ -35,6 +35,12 @@ import { Loader2 } from "lucide-react";
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>("explorar");
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
+
+  const showToast = (message: string, type: 'error' | 'success' = 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   // Data states
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -62,6 +68,7 @@ export default function Home() {
       setCustomFields(fetchedFields);
     } catch (err) {
       console.error("Error loading portfolio database data:", err);
+      showToast("Erro ao carregar os dados. Verifique a conexão com o Supabase.");
     } finally {
       setLoading(false);
     }
@@ -73,14 +80,20 @@ export default function Home() {
 
   // Job Handlers
   const handleSaveJob = async (formData: JobFormData) => {
-    if (editingJob) {
-      await updateJob(editingJob.id, formData);
-      setEditingJob(null);
-    } else {
-      await createJob(formData);
+    try {
+      if (editingJob) {
+        await updateJob(editingJob.id, formData);
+        setEditingJob(null);
+      } else {
+        await createJob(formData);
+      }
+      await loadAllData();
+      setActiveTab("explorar");
+      showToast(editingJob ? "Trabalho atualizado com sucesso!" : "Trabalho criado com sucesso!", 'success');
+    } catch (err) {
+      console.error("Error saving job:", err);
+      showToast("Erro ao salvar o trabalho. Tente novamente.");
     }
-    await loadAllData();
-    setActiveTab("explorar");
   };
 
   const handleEditJobClick = (job: Job) => {
@@ -89,15 +102,27 @@ export default function Home() {
   };
 
   const handleDeleteJobClick = async (id: string) => {
-    await deleteJob(id);
-    await loadAllData();
+    try {
+      await deleteJob(id);
+      await loadAllData();
+      showToast("Trabalho removido.", 'success');
+    } catch (err) {
+      console.error("Error deleting job:", err);
+      showToast("Erro ao remover o trabalho. Tente novamente.");
+    }
   };
 
   // Category Handlers
   const handleCreateCategory = async (name: string, color: string) => {
-    const created = await createCommercialCategory(name, color);
-    await loadAllData();
-    return created;
+    try {
+      const created = await createCommercialCategory(name, color);
+      await loadAllData();
+      return created;
+    } catch (err) {
+      console.error("Error creating category:", err);
+      showToast("Erro ao criar categoria.");
+      throw err;
+    }
   };
 
   const handleUpdateCategory = async (
@@ -105,30 +130,56 @@ export default function Home() {
     name: string,
     color: string,
   ) => {
-    await updateCommercialCategory(id, name, color);
-    await loadAllData();
+    try {
+      await updateCommercialCategory(id, name, color);
+      await loadAllData();
+    } catch (err) {
+      console.error("Error updating category:", err);
+      showToast("Erro ao atualizar categoria.");
+    }
   };
 
   const handleDeleteCategory = async (id: string) => {
-    await deleteCommercialCategory(id);
-    await loadAllData();
+    try {
+      await deleteCommercialCategory(id);
+      await loadAllData();
+    } catch (err) {
+      console.error("Error deleting category:", err);
+      showToast("Erro ao remover categoria.");
+    }
   };
 
   // Tag Handlers
   const handleCreateTag = async (name: string, color: string) => {
-    const created = await createJobTag(name, color);
-    await loadAllData();
-    return created;
+    try {
+      const created = await createJobTag(name, color);
+      await loadAllData();
+      return created;
+    } catch (err) {
+      console.error("Error creating tag:", err);
+      showToast("Erro ao criar tag.");
+      throw err;
+    }
   };
 
   const handleUpdateTag = async (id: string, name: string, color: string) => {
-    await updateJobTag(id, name, color);
-    await loadAllData();
+    try {
+      await updateJobTag(id, name, color);
+      await loadAllData();
+    } catch (err) {
+      console.error("Error updating tag:", err);
+      showToast("Erro ao atualizar tag.");
+    }
   };
 
   const handleDeleteTag = async (id: string) => {
-    await deleteJobTag(id);
-    await loadAllData();
+    try {
+      await deleteJobTag(id);
+      await loadAllData();
+    } catch (err) {
+      console.error("Error deleting tag:", err);
+      showToast("Erro ao remover tag.");
+    }
   };
 
   // Custom Field Handlers
@@ -138,23 +189,48 @@ export default function Home() {
     fieldType: CustomFieldDefinition["field_type"],
     options: string[],
   ) => {
-    const created = await createCustomFieldDefinition(
-      label,
-      key,
-      fieldType,
-      options,
-    );
-    await loadAllData();
-    return created;
+    try {
+      const created = await createCustomFieldDefinition(
+        label,
+        key,
+        fieldType,
+        options,
+      );
+      await loadAllData();
+      return created;
+    } catch (err) {
+      console.error("Error creating custom field:", err);
+      showToast("Erro ao criar campo personalizado.");
+      throw err;
+    }
   };
 
   const handleDeleteCustomField = async (id: string) => {
-    await deleteCustomFieldDefinition(id);
-    await loadAllData();
+    try {
+      await deleteCustomFieldDefinition(id);
+      await loadAllData();
+    } catch (err) {
+      console.error("Error deleting custom field:", err);
+      showToast("Erro ao remover campo personalizado.");
+    }
   };
 
   return (
     <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-xl shadow-2xl text-sm font-medium border transition-all animate-in fade-in slide-in-from-bottom-4 duration-300 ${
+            toast.type === 'success'
+              ? 'bg-emerald-950 border-emerald-500/30 text-emerald-300'
+              : 'bg-red-950 border-red-500/30 text-red-300'
+          }`}
+        >
+          <span className={`h-2 w-2 rounded-full flex-shrink-0 ${toast.type === 'success' ? 'bg-emerald-400' : 'bg-red-400'}`} />
+          {toast.message}
+        </div>
+      )}
+
       {/* Top Navbar */}
       <Navbar
         activeTab={activeTab}
