@@ -40,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full glass-panel border-b border-zinc-800/80 transition-colors">
+    <header className="sticky top-0 z-40 w-full glass-panel theme-border border-b transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo & Title */}
@@ -50,30 +50,30 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-base font-bold tracking-wide">
+                <h1 className="text-base font-bold theme-text tracking-wide">
                   Portfolio Database
                 </h1>
-                <span className="text-xs bg-indigo-500/20 text-indigo-400 dark:text-indigo-300 font-medium px-2 py-0.5 rounded-full border border-indigo-500/30">
+                <span className="text-xs bg-indigo-500/20 text-indigo-500 font-medium px-2 py-0.5 rounded-full border border-indigo-500/30">
                   Wagner & Aflora
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 dark:text-zinc-400">Wagner • Daiana • Aflora Espaço Criativo</p>
+              <p className="text-xs theme-text-muted">Wagner • Daiana • Aflora Espaço Criativo</p>
             </div>
           </div>
 
           {/* Navigation Tabs (Desktop) */}
-          <nav className="hidden lg:flex items-center space-x-1 bg-zinc-100 dark:bg-zinc-900/90 p-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <nav className="hidden lg:flex items-center space-x-1 theme-card-subtle p-1.5 rounded-xl border theme-border">
             <button
               onClick={() => setActiveTab('explorar')}
               className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'explorar'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60'
+                  : 'theme-text-muted hover:theme-text hover:bg-zinc-500/10'
               }`}
             >
               <FolderKanban className="h-4 w-4" />
               <span>Explorar Trabalhos</span>
-              <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono">
+              <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full theme-card theme-text font-mono border theme-border">
                 {jobsCount}
               </span>
             </button>
@@ -83,7 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
               className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'novo'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60'
+                  : 'theme-text-muted hover:theme-text hover:bg-zinc-500/10'
               }`}
             >
               <PlusCircle className="h-4 w-4" />
@@ -95,7 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
               className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'analytics'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60'
+                  : 'theme-text-muted hover:theme-text hover:bg-zinc-500/10'
               }`}
             >
               <BarChart3 className="h-4 w-4" />
@@ -107,7 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
               className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 activeTab === 'metadata'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60'
+                  : 'theme-text-muted hover:theme-text hover:bg-zinc-500/10'
               }`}
             >
               <Settings className="h-4 w-4" />
@@ -120,7 +120,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition"
+              className="p-2 rounded-xl theme-card border theme-border theme-text hover:bg-indigo-500/10 transition"
               title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
             >
               {theme === 'dark' ? (
@@ -133,12 +133,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
             {/* Connection Status Pill */}
             <div className="hidden sm:flex items-center space-x-2">
               {isConnected ? (
-                <div className="flex items-center space-x-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-medium">
+                <div className="flex items-center space-x-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-medium">
                   <DatabaseZap className="h-3.5 w-3.5" />
                   <span>Supabase Conectado</span>
                 </div>
               ) : (
-                <div className="flex items-center space-x-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-xs font-medium" title="Modo fallback ativado">
+                <div className="flex items-center space-x-1.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1 rounded-full text-xs font-medium" title="Modo fallback ativado">
                   <Database className="h-3.5 w-3.5" />
                   <span>Modo Local / Fallback</span>
                 </div>
@@ -149,11 +149,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
       </div>
 
       {/* Mobile Navigation Bar */}
-      <div className="lg:hidden flex items-center justify-around bg-zinc-100 dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 p-2">
+      <div className="lg:hidden flex items-center justify-around theme-card border-t theme-border p-2">
         <button
           onClick={() => setActiveTab('explorar')}
           className={`flex flex-col items-center p-1.5 text-xs ${
-            activeTab === 'explorar' ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400'
+            activeTab === 'explorar' ? 'text-indigo-600 font-semibold' : 'theme-text-muted'
           }`}
         >
           <FolderKanban className="h-4 w-4 mb-0.5" />
@@ -162,7 +162,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
         <button
           onClick={() => setActiveTab('novo')}
           className={`flex flex-col items-center p-1.5 text-xs ${
-            activeTab === 'novo' ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400'
+            activeTab === 'novo' ? 'text-indigo-600 font-semibold' : 'theme-text-muted'
           }`}
         >
           <PlusCircle className="h-4 w-4 mb-0.5" />
@@ -171,7 +171,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
         <button
           onClick={() => setActiveTab('analytics')}
           className={`flex flex-col items-center p-1.5 text-xs ${
-            activeTab === 'analytics' ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400'
+            activeTab === 'analytics' ? 'text-indigo-600 font-semibold' : 'theme-text-muted'
           }`}
         >
           <BarChart3 className="h-4 w-4 mb-0.5" />
@@ -180,7 +180,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
         <button
           onClick={() => setActiveTab('metadata')}
           className={`flex flex-col items-center p-1.5 text-xs ${
-            activeTab === 'metadata' ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400'
+            activeTab === 'metadata' ? 'text-indigo-600 font-semibold' : 'theme-text-muted'
           }`}
         >
           <Settings className="h-4 w-4 mb-0.5" />

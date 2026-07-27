@@ -53,21 +53,21 @@ export const CategoryTagModal: React.FC<CategoryTagModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5">
-        <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+      <div className="theme-card border theme-border rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5">
+        <div className="flex items-center justify-between border-b theme-border pb-3">
           <div className="flex items-center space-x-2">
             {type === 'category' ? (
-              <FolderPlus className="h-5 w-5 text-indigo-400" />
+              <FolderPlus className="h-5 w-5 text-indigo-500" />
             ) : (
-              <Tag className="h-5 w-5 text-indigo-400" />
+              <Tag className="h-5 w-5 text-indigo-500" />
             )}
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-lg font-bold theme-text">
               {type === 'category' ? 'Nova Categoria Comercial' : 'Nova Tag de Trabalho'}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+            className="p-1 rounded-lg theme-text-muted hover:theme-text hover:bg-zinc-500/10 transition"
           >
             <X className="h-5 w-5" />
           </button>
@@ -75,7 +75,7 @@ export const CategoryTagModal: React.FC<CategoryTagModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
               Nome da {type === 'category' ? 'Categoria' : 'Tag'}
             </label>
             <input
@@ -84,12 +84,12 @@ export const CategoryTagModal: React.FC<CategoryTagModalProps> = ({
               placeholder={type === 'category' ? 'Ex: B2B, Edital, Ensaio Autoral' : 'Ex: Fotografia, Vídeo, Branding'}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-2">
               Cor de Destaque
             </label>
             <div className="flex flex-wrap gap-2 mb-3">
@@ -110,17 +110,17 @@ export const CategoryTagModal: React.FC<CategoryTagModalProps> = ({
                 type="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                className="w-9 h-9 rounded-lg bg-zinc-950 border border-zinc-800 cursor-pointer p-0.5"
+                className="w-9 h-9 rounded-lg theme-input border theme-border cursor-pointer p-0.5"
               />
-              <span className="text-xs font-mono text-zinc-400">{color}</span>
+              <span className="text-xs font-mono theme-text-muted">{color}</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-end space-x-3 pt-3 border-t border-zinc-800">
+          <div className="flex items-center justify-end space-x-3 pt-3 border-t theme-border">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+              className="px-4 py-2 rounded-xl text-sm theme-text-muted hover:theme-text hover:bg-zinc-500/10 transition"
             >
               Cancelar
             </button>

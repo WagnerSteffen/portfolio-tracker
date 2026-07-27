@@ -26,7 +26,6 @@ export const CustomFieldModal: React.FC<CustomFieldModalProps> = ({
     e.preventDefault();
     if (!label.trim()) return;
 
-    // Generate snake_case key from label
     const key = label
       .trim()
       .toLowerCase()
@@ -54,15 +53,15 @@ export const CustomFieldModal: React.FC<CustomFieldModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5">
-        <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+      <div className="theme-card border theme-border rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-5">
+        <div className="flex items-center justify-between border-b theme-border pb-3">
           <div className="flex items-center space-x-2">
-            <Sliders className="h-5 w-5 text-indigo-400" />
-            <h3 className="text-lg font-bold text-white">Novo Campo Personalizado</h3>
+            <Sliders className="h-5 w-5 text-indigo-500" />
+            <h3 className="text-lg font-bold theme-text">Novo Campo Personalizado</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+            className="p-1 rounded-lg theme-text-muted hover:theme-text hover:bg-zinc-500/10 transition"
           >
             <X className="h-5 w-5" />
           </button>
@@ -70,7 +69,7 @@ export const CustomFieldModal: React.FC<CustomFieldModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
               Rótulo / Nome do Campo
             </label>
             <input
@@ -79,18 +78,18 @@ export const CustomFieldModal: React.FC<CustomFieldModalProps> = ({
               placeholder="Ex: Câmera Usada, Qtd. Fotos, Equipamento Auxiliar"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
               Tipo de Dado
             </label>
             <select
               value={fieldType}
               onChange={(e) => setFieldType(e.target.value as CustomFieldType)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
             >
               <option value="text">Texto Livre</option>
               <option value="number">Número</option>
@@ -102,7 +101,7 @@ export const CustomFieldModal: React.FC<CustomFieldModalProps> = ({
 
           {fieldType === 'select' && (
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
                 Opções da Seleção (separadas por vírgula)
               </label>
               <input
@@ -110,16 +109,16 @@ export const CustomFieldModal: React.FC<CustomFieldModalProps> = ({
                 placeholder="Ex: Opção A, Opção B, Opção C"
                 value={optionsStr}
                 onChange={(e) => setOptionsStr(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
               />
             </div>
           )}
 
-          <div className="flex items-center justify-end space-x-3 pt-3 border-t border-zinc-800">
+          <div className="flex items-center justify-end space-x-3 pt-3 border-t theme-border">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+              className="px-4 py-2 rounded-xl text-sm theme-text-muted hover:theme-text hover:bg-zinc-500/10 transition"
             >
               Cancelar
             </button>

@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { Navbar, TabType } from '@/components/layout/Navbar';
-import { JobsExplorer } from '@/components/jobs/JobsExplorer';
-import { JobForm } from '@/components/jobs/JobForm';
-import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
-import { MetadataManager } from '@/components/settings/MetadataManager';
+import React, { useState, useEffect } from "react";
+import { Navbar, TabType } from "@/components/layout/Navbar";
+import { JobsExplorer } from "@/components/jobs/JobsExplorer";
+import { JobForm } from "@/components/jobs/JobForm";
+import { AnalyticsDashboard } from "@/components/analytics/AnalyticsDashboard";
+import { MetadataManager } from "@/components/settings/MetadataManager";
 import {
   Job,
   JobFormData,
   CommercialCategory,
   JobTag,
   CustomFieldDefinition,
-} from '@/types/database';
+} from "@/types/database";
 import {
   getJobs,
   createJob,
@@ -29,11 +29,11 @@ import {
   getCustomFieldDefinitions,
   createCustomFieldDefinition,
   deleteCustomFieldDefinition,
-} from '@/lib/supabase/api';
-import { Loader2 } from 'lucide-react';
+} from "@/lib/supabase/api";
+import { Loader2 } from "lucide-react";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<TabType>('explorar');
+  const [activeTab, setActiveTab] = useState<TabType>("explorar");
   const [loading, setLoading] = useState(true);
 
   // Data states
@@ -48,19 +48,20 @@ export default function Home() {
   // Load dataset
   const loadAllData = async () => {
     try {
-      const [fetchedJobs, fetchedCats, fetchedTags, fetchedFields] = await Promise.all([
-        getJobs(),
-        getCommercialCategories(),
-        getJobTags(),
-        getCustomFieldDefinitions(),
-      ]);
+      const [fetchedJobs, fetchedCats, fetchedTags, fetchedFields] =
+        await Promise.all([
+          getJobs(),
+          getCommercialCategories(),
+          getJobTags(),
+          getCustomFieldDefinitions(),
+        ]);
 
       setJobs(fetchedJobs);
       setCategories(fetchedCats);
       setTags(fetchedTags);
       setCustomFields(fetchedFields);
     } catch (err) {
-      console.error('Error loading portfolio database data:', err);
+      console.error("Error loading portfolio database data:", err);
     } finally {
       setLoading(false);
     }
@@ -79,12 +80,12 @@ export default function Home() {
       await createJob(formData);
     }
     await loadAllData();
-    setActiveTab('explorar');
+    setActiveTab("explorar");
   };
 
   const handleEditJobClick = (job: Job) => {
     setEditingJob(job);
-    setActiveTab('novo');
+    setActiveTab("novo");
   };
 
   const handleDeleteJobClick = async (id: string) => {
@@ -99,7 +100,11 @@ export default function Home() {
     return created;
   };
 
-  const handleUpdateCategory = async (id: string, name: string, color: string) => {
+  const handleUpdateCategory = async (
+    id: string,
+    name: string,
+    color: string,
+  ) => {
     await updateCommercialCategory(id, name, color);
     await loadAllData();
   };
@@ -130,10 +135,15 @@ export default function Home() {
   const handleCreateCustomField = async (
     label: string,
     key: string,
-    fieldType: CustomFieldDefinition['field_type'],
-    options: string[]
+    fieldType: CustomFieldDefinition["field_type"],
+    options: string[],
   ) => {
-    const created = await createCustomFieldDefinition(label, key, fieldType, options);
+    const created = await createCustomFieldDefinition(
+      label,
+      key,
+      fieldType,
+      options,
+    );
     await loadAllData();
     return created;
   };
@@ -144,12 +154,12 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       {/* Top Navbar */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={(tab) => {
-          if (tab !== 'novo') setEditingJob(null);
+          if (tab !== "novo") setEditingJob(null);
           setActiveTab(tab);
         }}
         jobsCount={jobs.length}
@@ -160,11 +170,13 @@ export default function Home() {
         {loading ? (
           <div className="flex flex-col items-center justify-center h-64 space-y-4 text-zinc-400">
             <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-            <p className="text-sm font-medium">Carregando base de dados do portfólio...</p>
+            <p className="text-sm font-medium">
+              Carregando base de dados do portfólio...
+            </p>
           </div>
         ) : (
           <>
-            {activeTab === 'explorar' && (
+            {activeTab === "explorar" && (
               <JobsExplorer
                 jobs={jobs}
                 categories={categories}
@@ -174,12 +186,12 @@ export default function Home() {
                 onDeleteJob={handleDeleteJobClick}
                 onAddNewJob={() => {
                   setEditingJob(null);
-                  setActiveTab('novo');
+                  setActiveTab("novo");
                 }}
               />
             )}
 
-            {activeTab === 'novo' && (
+            {activeTab === "novo" && (
               <JobForm
                 initialData={editingJob}
                 categories={categories}
@@ -191,16 +203,20 @@ export default function Home() {
                 onCreateCustomField={handleCreateCustomField}
                 onCancel={() => {
                   setEditingJob(null);
-                  setActiveTab('explorar');
+                  setActiveTab("explorar");
                 }}
               />
             )}
 
-            {activeTab === 'analytics' && (
-              <AnalyticsDashboard jobs={jobs} categories={categories} tags={tags} />
+            {activeTab === "analytics" && (
+              <AnalyticsDashboard
+                jobs={jobs}
+                categories={categories}
+                tags={tags}
+              />
             )}
 
-            {activeTab === 'metadata' && (
+            {activeTab === "metadata" && (
               <MetadataManager
                 categories={categories}
                 tags={tags}
@@ -222,7 +238,8 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-zinc-800/80 py-6 text-center text-xs text-zinc-500 glass-panel">
         <p>
-          Portfolio Database & Track System • <strong>Wagner (Fotografia)</strong> &{' '}
+          Portfolio Database & Track System •{" "}
+          <strong>Wagner (Fotografia)</strong> &{" "}
           <strong>Aflora Espaço Criativo</strong> • Daiana
         </p>
       </footer>

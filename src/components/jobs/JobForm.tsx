@@ -30,6 +30,7 @@ import {
 } from '@/types/database';
 import { CategoryTagModal } from './CategoryTagModal';
 import { CustomFieldModal } from './CustomFieldModal';
+import { formatExternalUrl } from '@/utils/url';
 
 interface JobFormProps {
   initialData?: Job | null;
@@ -70,7 +71,6 @@ export const JobForm: React.FC<JobFormProps> = ({
   const [status, setStatus] = useState<JobStatus>(initialData?.status || 'completed');
   const [description, setDescription] = useState(initialData?.description || '');
 
-  // Category & Tag selection arrays (N:N)
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
     initialData?.categories?.map((c) => c.id) || []
   );
@@ -78,12 +78,10 @@ export const JobForm: React.FC<JobFormProps> = ({
     initialData?.tags?.map((t) => t.id) || []
   );
 
-  // Dynamic Custom Fields State
   const [customValues, setCustomValues] = useState<Record<string, any>>(
     initialData?.custom_fields || {}
   );
 
-  // Modals state
   const [modalType, setModalType] = useState<'category' | 'tag' | 'custom_field' | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -116,8 +114,8 @@ export const JobForm: React.FC<JobFormProps> = ({
         performer,
         job_date: jobDate,
         location: location.trim(),
-        drive_url: driveUrl.trim(),
-        youtube_url: youtubeUrl.trim(),
+        drive_url: formatExternalUrl(driveUrl),
+        youtube_url: formatExternalUrl(youtubeUrl),
         value: Number(value) || 0,
         status,
         description: description.trim(),
@@ -131,7 +129,6 @@ export const JobForm: React.FC<JobFormProps> = ({
       setTimeout(() => setSuccessMessage(''), 4000);
 
       if (!initialData) {
-        // Reset form for next entry
         setTitle('');
         setClientName('');
         setLocation('');
@@ -154,13 +151,13 @@ export const JobForm: React.FC<JobFormProps> = ({
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header Banner */}
-      <div className="glass-panel p-6 rounded-2xl border border-zinc-800 flex items-center justify-between">
+      <div className="glass-panel p-6 rounded-2xl border theme-border flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-indigo-400" />
+          <h2 className="text-xl font-bold theme-text flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-indigo-500" />
             {initialData ? 'Editar Trabalho' : 'Cadastrar Novo Trabalho'}
           </h2>
-          <p className="text-xs text-zinc-400 mt-1">
+          <p className="text-xs theme-text-muted mt-1">
             Preencha os dados do projeto, links de portfólio (Google Drive / YouTube) e selecione as categorias N:N.
           </p>
         </div>
@@ -168,7 +165,7 @@ export const JobForm: React.FC<JobFormProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-zinc-800 text-zinc-300 hover:text-white transition"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold theme-card theme-text theme-border border transition"
           >
             Cancelar Edição
           </button>
@@ -176,7 +173,7 @@ export const JobForm: React.FC<JobFormProps> = ({
       </div>
 
       {successMessage && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-4 py-3 rounded-xl flex items-center justify-between animate-fadeIn text-sm">
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 px-4 py-3 rounded-xl flex items-center justify-between animate-fadeIn text-sm">
           <span>{successMessage}</span>
           <Check className="h-4 w-4" />
         </div>
@@ -184,16 +181,16 @@ export const JobForm: React.FC<JobFormProps> = ({
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section 1: Informações Básicas */}
-        <div className="bg-zinc-900/90 border border-zinc-800 p-6 rounded-2xl space-y-5">
-          <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wider border-b border-zinc-800 pb-2 flex items-center gap-2">
-            <FileText className="h-4 w-4 text-indigo-400" />
+        <div className="theme-card border p-6 rounded-2xl space-y-5 shadow-sm">
+          <h3 className="text-sm font-bold theme-text uppercase tracking-wider border-b theme-border pb-2 flex items-center gap-2">
+            <FileText className="h-4 w-4 text-indigo-500" />
             Informações do Trabalho
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Title */}
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
                 Título / Nome do Trabalho *
               </label>
               <input
@@ -202,36 +199,36 @@ export const JobForm: React.FC<JobFormProps> = ({
                 placeholder="Ex: Cobertura Fotográfica Casamento Marina & Pedro"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
               />
             </div>
 
             {/* Client Name */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
                 Nome do Cliente / Empresa
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
+                <User className="absolute left-3 top-3 h-4 w-4 theme-text-muted" />
                 <input
                   type="text"
                   placeholder="Ex: Ana Clara ou Marca X"
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  className="w-full theme-input border rounded-xl pl-9 pr-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
                 />
               </div>
             </div>
 
-            {/* Performer ("Quem fez?") */}
+            {/* Performer */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
                 Executado por (Quem realizou) *
               </label>
               <select
                 value={performer}
                 onChange={(e) => setPerformer(e.target.value as PerformerType)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
               >
                 {Object.entries(PERFORMER_LABELS).map(([key, val]) => (
                   <option key={key} value={key}>
@@ -243,47 +240,47 @@ export const JobForm: React.FC<JobFormProps> = ({
 
             {/* Job Date */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
                 Data do Trabalho / Evento *
               </label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
+                <Calendar className="absolute left-3 top-3 h-4 w-4 theme-text-muted" />
                 <input
                   type="date"
                   required
                   value={jobDate}
                   onChange={(e) => setJobDate(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  className="w-full theme-input border rounded-xl pl-9 pr-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
                 />
               </div>
             </div>
 
             {/* Location */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
                 Local / Cidade / Estado
               </label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
+                <MapPin className="absolute left-3 top-3 h-4 w-4 theme-text-muted" />
                 <input
                   type="text"
                   placeholder="Ex: Florianópolis, SC"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  className="w-full theme-input border rounded-xl pl-9 pr-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
                 />
               </div>
             </div>
 
             {/* Status */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
                 Status do Projeto
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as JobStatus)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
               >
                 {Object.entries(STATUS_LABELS).map(([key, val]) => (
                   <option key={key} value={key}>
@@ -295,11 +292,11 @@ export const JobForm: React.FC<JobFormProps> = ({
 
             {/* Value (R$) */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5">
                 Valor Comercial / Orçamento (R$)
               </label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
+                <DollarSign className="absolute left-3 top-3 h-4 w-4 theme-text-muted" />
                 <input
                   type="number"
                   step="0.01"
@@ -307,7 +304,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                   placeholder="0.00"
                   value={value || ''}
                   onChange={(e) => setValue(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  className="w-full theme-input border rounded-xl pl-9 pr-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500"
                 />
               </div>
             </div>
@@ -315,18 +312,18 @@ export const JobForm: React.FC<JobFormProps> = ({
         </div>
 
         {/* Section 2: Categorias Comerciais & Tags (N:N) */}
-        <div className="bg-zinc-900/90 border border-zinc-800 p-6 rounded-2xl space-y-5">
-          {/* Categorias Comerciais (N:N) */}
+        <div className="theme-card border p-6 rounded-2xl space-y-5 shadow-sm">
+          {/* Categorias Comerciais */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Folder className="h-4 w-4 text-indigo-400" />
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider flex items-center gap-1.5">
+                <Folder className="h-4 w-4 text-indigo-500" />
                 Categorias Comerciais (B2B, B2C, Edital...) [N:N]
               </label>
               <button
                 type="button"
                 onClick={() => setModalType('category')}
-                className="text-xs font-medium text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-2.5 py-1 rounded-lg transition"
+                className="text-xs font-medium text-indigo-500 flex items-center gap-1 bg-indigo-500/10 px-2.5 py-1 rounded-lg transition"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span>Nova Categoria</span>
@@ -344,7 +341,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                     className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border ${
                       isSelected
                         ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30'
-                        : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white'
+                        : 'theme-card-subtle theme-text-muted theme-border hover:theme-text'
                     }`}
                   >
                     <span
@@ -356,23 +353,20 @@ export const JobForm: React.FC<JobFormProps> = ({
                   </button>
                 );
               })}
-              {categories.length === 0 && (
-                <p className="text-xs text-zinc-500 italic">Nenhuma categoria cadastrada.</p>
-              )}
             </div>
           </div>
 
-          {/* Tags do Trabalho (N:N) */}
-          <div className="pt-3 border-t border-zinc-800/80">
+          {/* Tags */}
+          <div className="pt-3 border-t theme-border">
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Tag className="h-4 w-4 text-indigo-400" />
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider flex items-center gap-1.5">
+                <Tag className="h-4 w-4 text-indigo-500" />
                 Tags do Trabalho (Fotografia, Vídeo, Branding...) [N:N]
               </label>
               <button
                 type="button"
                 onClick={() => setModalType('tag')}
-                className="text-xs font-medium text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-2.5 py-1 rounded-lg transition"
+                className="text-xs font-medium text-purple-500 flex items-center gap-1 bg-purple-500/10 px-2.5 py-1 rounded-lg transition"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span>Nova Tag</span>
@@ -390,7 +384,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                     className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border ${
                       isSelected
                         ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/30'
-                        : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white'
+                        : 'theme-card-subtle theme-text-muted theme-border hover:theme-text'
                     }`}
                   >
                     <span
@@ -402,25 +396,22 @@ export const JobForm: React.FC<JobFormProps> = ({
                   </button>
                 );
               })}
-              {tags.length === 0 && (
-                <p className="text-xs text-zinc-500 italic">Nenhuma tag cadastrada.</p>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Section 3: Portfólio & Links (Google Drive & YouTube) */}
-        <div className="bg-zinc-900/90 border border-zinc-800 p-6 rounded-2xl space-y-4">
-          <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wider border-b border-zinc-800 pb-2 flex items-center gap-2">
-            <LinkIcon className="h-4 w-4 text-indigo-400" />
+        {/* Section 3: Portfólio & Links */}
+        <div className="theme-card border p-6 rounded-2xl space-y-4 shadow-sm">
+          <h3 className="text-sm font-bold theme-text uppercase tracking-wider border-b theme-border pb-2 flex items-center gap-2">
+            <LinkIcon className="h-4 w-4 text-indigo-500" />
             Links do Portfólio & Mídias
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Google Drive URL */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                <FolderPlus className="h-4 w-4 text-emerald-400" />
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <FolderPlus className="h-4 w-4 text-emerald-500" />
                 Link da Pasta no Google Drive
               </label>
               <input
@@ -428,16 +419,13 @@ export const JobForm: React.FC<JobFormProps> = ({
                 placeholder="https://drive.google.com/drive/folders/..."
                 value={driveUrl}
                 onChange={(e) => setDriveUrl(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-emerald-500"
               />
-              <p className="text-[11px] text-zinc-500 mt-1">
-                Link da pasta do cliente com entregáveis de alta resolução.
-              </p>
             </div>
 
             {/* YouTube URL */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                 <YouTubeIcon className="h-4 w-4 text-red-500" />
                 Link do Vídeo / Teaser no YouTube
               </label>
@@ -446,26 +434,23 @@ export const JobForm: React.FC<JobFormProps> = ({
                 placeholder="https://www.youtube.com/watch?v=..."
                 value={youtubeUrl}
                 onChange={(e) => setYoutubeUrl(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-red-500"
               />
-              <p className="text-[11px] text-zinc-500 mt-1">
-                Vídeo do projeto, reels ou showreel final.
-              </p>
             </div>
           </div>
         </div>
 
-        {/* Section 4: Campos Personalizados Dinâmicos */}
-        <div className="bg-zinc-900/90 border border-zinc-800 p-6 rounded-2xl space-y-4">
-          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-            <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-2">
-              <Sliders className="h-4 w-4 text-indigo-400" />
+        {/* Section 4: Dynamic Custom Fields */}
+        <div className="theme-card border p-6 rounded-2xl space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b theme-border pb-2">
+            <h3 className="text-sm font-bold theme-text uppercase tracking-wider flex items-center gap-2">
+              <Sliders className="h-4 w-4 text-indigo-500" />
               Campos Personalizados (Formulário Dinâmico)
             </h3>
             <button
               type="button"
               onClick={() => setModalType('custom_field')}
-              className="text-xs font-medium text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-2.5 py-1 rounded-lg transition"
+              className="text-xs font-medium text-indigo-500 flex items-center gap-1 bg-indigo-500/10 px-2.5 py-1 rounded-lg transition"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>Criar Novo Campo</span>
@@ -475,8 +460,8 @@ export const JobForm: React.FC<JobFormProps> = ({
           {customFields.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {customFields.map((field) => (
-                <div key={field.id} className="bg-zinc-950/60 p-3.5 rounded-xl border border-zinc-800">
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                <div key={field.id} className="theme-card-subtle p-3.5 rounded-xl border theme-border">
+                  <label className="block text-xs font-semibold theme-text mb-1.5">
                     {field.label}
                   </label>
 
@@ -485,7 +470,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                       type="text"
                       value={customValues[field.key] || ''}
                       onChange={(e) => handleCustomValueChange(field.key, e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                      className="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none"
                     />
                   )}
 
@@ -494,7 +479,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                       type="number"
                       value={customValues[field.key] || ''}
                       onChange={(e) => handleCustomValueChange(field.key, e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                      className="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none"
                     />
                   )}
 
@@ -503,17 +488,17 @@ export const JobForm: React.FC<JobFormProps> = ({
                       type="date"
                       value={customValues[field.key] || ''}
                       onChange={(e) => handleCustomValueChange(field.key, e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                      className="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none"
                     />
                   )}
 
                   {field.field_type === 'boolean' && (
-                    <label className="flex items-center space-x-2 text-sm text-zinc-300 cursor-pointer pt-1">
+                    <label className="flex items-center space-x-2 text-sm theme-text cursor-pointer pt-1">
                       <input
                         type="checkbox"
                         checked={Boolean(customValues[field.key])}
                         onChange={(e) => handleCustomValueChange(field.key, e.target.checked)}
-                        className="w-4 h-4 rounded bg-zinc-900 border-zinc-700 text-indigo-600 focus:ring-indigo-500"
+                        className="w-4 h-4 rounded theme-input text-indigo-600 focus:ring-indigo-500"
                       />
                       <span>Sim / Confirmado</span>
                     </label>
@@ -523,7 +508,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                     <select
                       value={customValues[field.key] || ''}
                       onChange={(e) => handleCustomValueChange(field.key, e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                      className="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none"
                     >
                       <option value="">Selecione uma opção...</option>
                       {field.options?.map((opt) => (
@@ -537,15 +522,15 @@ export const JobForm: React.FC<JobFormProps> = ({
               ))}
             </div>
           ) : (
-            <p className="text-xs text-zinc-500 italic py-2">
-              Nenhum campo personalizado definido ainda. Clique em "Criar Novo Campo" acima para adicionar novas propriedades dynamicamente.
+            <p className="text-xs theme-text-muted italic py-2">
+              Nenhum campo personalizado definido ainda.
             </p>
           )}
         </div>
 
-        {/* Section 5: Observações e Descrição */}
-        <div className="bg-zinc-900/90 border border-zinc-800 p-6 rounded-2xl space-y-4">
-          <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+        {/* Section 5: Observações */}
+        <div className="theme-card border p-6 rounded-2xl space-y-4 shadow-sm">
+          <label className="block text-xs font-semibold theme-text uppercase tracking-wider">
             Descrição do Projeto / Notas Comerciais
           </label>
           <textarea
@@ -553,7 +538,7 @@ export const JobForm: React.FC<JobFormProps> = ({
             placeholder="Detalhes adicionais sobre o briefing, escopo, referências ou entregas do projeto..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            className="w-full theme-input border rounded-xl p-3.5 text-sm focus:outline-none"
           />
         </div>
 
@@ -563,7 +548,7 @@ export const JobForm: React.FC<JobFormProps> = ({
             <button
               type="button"
               onClick={onCancel}
-              className="px-5 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+              className="px-5 py-2.5 rounded-xl text-sm font-medium theme-text-muted hover:theme-text transition"
             >
               Cancelar
             </button>
@@ -579,7 +564,7 @@ export const JobForm: React.FC<JobFormProps> = ({
         </div>
       </form>
 
-      {/* Modals for creating category / tag / custom field inline */}
+      {/* Modals */}
       <CategoryTagModal
         isOpen={modalType === 'category'}
         onClose={() => setModalType(null)}

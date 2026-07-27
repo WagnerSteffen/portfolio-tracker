@@ -49,7 +49,6 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
 }) => {
   const [modalType, setModalType] = useState<'category' | 'tag' | 'custom_field' | null>(null);
 
-  // Edit inline states
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editCatName, setEditCatName] = useState('');
   const [editCatColor, setEditCatColor] = useState('');
@@ -84,19 +83,19 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      <div className="glass-panel p-6 rounded-2xl border border-zinc-800">
-        <h2 className="text-xl font-bold text-white">Configurations / Configurações do Sistema</h2>
-        <p className="text-xs text-zinc-400 mt-1">
+      <div className="glass-panel p-6 rounded-2xl border theme-border">
+        <h2 className="text-xl font-bold theme-text">Configurations / Configurações do Sistema</h2>
+        <p className="text-xs theme-text-muted mt-1">
           Gerencie categorias comerciais (B2C, B2B, Edital...), tags de trabalhos e campos personalizados dinâmicos do formulário.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Section 1: Commercial Categories */}
-        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-4 shadow-xl">
-          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <FolderPlus className="h-4 w-4 text-indigo-400" />
+        <div className="theme-card border p-6 rounded-2xl space-y-4 shadow-md">
+          <div className="flex items-center justify-between border-b theme-border pb-3">
+            <h3 className="text-sm font-bold theme-text flex items-center gap-2">
+              <FolderPlus className="h-4 w-4 text-indigo-500" />
               Categorias Comerciais (N:N)
             </h3>
             <button
@@ -112,7 +111,7 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
             {categories.map((cat) => (
               <div
                 key={cat.id}
-                className="flex items-center justify-between p-3 bg-zinc-950 rounded-xl border border-zinc-800 text-xs"
+                className="flex items-center justify-between p-3 theme-card-subtle rounded-xl border theme-border text-xs"
               >
                 {editingCatId === cat.id ? (
                   <div className="flex items-center space-x-2 w-full pr-2">
@@ -126,17 +125,17 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
                       type="text"
                       value={editCatName}
                       onChange={(e) => setEditCatName(e.target.value)}
-                      className="bg-zinc-900 border border-zinc-700 text-white px-2 py-1 rounded text-xs w-full focus:outline-none"
+                      className="theme-input border theme-border theme-text px-2 py-1 rounded text-xs w-full focus:outline-none"
                     />
                     <button
                       onClick={() => saveEditCategory(cat.id)}
-                      className="p-1 text-emerald-400 hover:bg-zinc-800 rounded"
+                      className="p-1 text-emerald-500 hover:bg-zinc-500/10 rounded"
                     >
                       <Check className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setEditingCatId(null)}
-                      className="p-1 text-zinc-400 hover:bg-zinc-800 rounded"
+                      className="p-1 theme-text-muted hover:bg-zinc-500/10 rounded"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -145,12 +144,12 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
                   <>
                     <div className="flex items-center space-x-2">
                       <span className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                      <span className="font-semibold text-zinc-200">{cat.name}</span>
+                      <span className="font-semibold theme-text">{cat.name}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <button
                         onClick={() => startEditCategory(cat)}
-                        className="p-1 text-zinc-400 hover:text-white"
+                        className="p-1 theme-text-muted hover:theme-text"
                         title="Editar"
                       >
                         <Edit2 className="h-3.5 w-3.5" />
@@ -159,7 +158,7 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
                         onClick={() => {
                           if (confirm(`Excluir categoria "${cat.name}"?`)) onDeleteCategory(cat.id);
                         }}
-                        className="p-1 text-zinc-400 hover:text-red-400"
+                        className="p-1 theme-text-muted hover:text-red-500"
                         title="Excluir"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -173,10 +172,10 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
         </div>
 
         {/* Section 2: Job Tags */}
-        <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-4 shadow-xl">
-          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Tag className="h-4 w-4 text-purple-400" />
+        <div className="theme-card border p-6 rounded-2xl space-y-4 shadow-md">
+          <div className="flex items-center justify-between border-b theme-border pb-3">
+            <h3 className="text-sm font-bold theme-text flex items-center gap-2">
+              <Tag className="h-4 w-4 text-purple-500" />
               Tags de Trabalhos (N:N)
             </h3>
             <button
@@ -192,7 +191,7 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
             {tags.map((tag) => (
               <div
                 key={tag.id}
-                className="flex items-center justify-between p-3 bg-zinc-950 rounded-xl border border-zinc-800 text-xs"
+                className="flex items-center justify-between p-3 theme-card-subtle rounded-xl border theme-border text-xs"
               >
                 {editingTagId === tag.id ? (
                   <div className="flex items-center space-x-2 w-full pr-2">
@@ -206,17 +205,17 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
                       type="text"
                       value={editTagName}
                       onChange={(e) => setEditTagName(e.target.value)}
-                      className="bg-zinc-900 border border-zinc-700 text-white px-2 py-1 rounded text-xs w-full focus:outline-none"
+                      className="theme-input border theme-border theme-text px-2 py-1 rounded text-xs w-full focus:outline-none"
                     />
                     <button
                       onClick={() => saveEditTag(tag.id)}
-                      className="p-1 text-emerald-400 hover:bg-zinc-800 rounded"
+                      className="p-1 text-emerald-500 hover:bg-zinc-500/10 rounded"
                     >
                       <Check className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setEditingTagId(null)}
-                      className="p-1 text-zinc-400 hover:bg-zinc-800 rounded"
+                      className="p-1 theme-text-muted hover:bg-zinc-500/10 rounded"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -225,12 +224,12 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
                   <>
                     <div className="flex items-center space-x-2">
                       <span className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
-                      <span className="font-semibold text-zinc-200">#{tag.name}</span>
+                      <span className="font-semibold theme-text">#{tag.name}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <button
                         onClick={() => startEditTag(tag)}
-                        className="p-1 text-zinc-400 hover:text-white"
+                        className="p-1 theme-text-muted hover:theme-text"
                         title="Editar"
                       >
                         <Edit2 className="h-3.5 w-3.5" />
@@ -239,7 +238,7 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
                         onClick={() => {
                           if (confirm(`Excluir tag "${tag.name}"?`)) onDeleteTag(tag.id);
                         }}
-                        className="p-1 text-zinc-400 hover:text-red-400"
+                        className="p-1 theme-text-muted hover:text-red-500"
                         title="Excluir"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -254,10 +253,10 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
       </div>
 
       {/* Section 3: Dynamic Custom Fields Table */}
-      <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-4 shadow-xl">
-        <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <Sliders className="h-4 w-4 text-indigo-400" />
+      <div className="theme-card border p-6 rounded-2xl space-y-4 shadow-md">
+        <div className="flex items-center justify-between border-b theme-border pb-3">
+          <h3 className="text-sm font-bold theme-text flex items-center gap-2">
+            <Sliders className="h-4 w-4 text-indigo-500" />
             Definições de Campos Personalizados do Formulário
           </h3>
           <button
@@ -271,8 +270,8 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
 
         {customFields.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-zinc-300">
-              <thead className="bg-zinc-950 text-zinc-400 uppercase tracking-wider">
+            <table className="w-full text-left text-xs theme-text">
+              <thead className="theme-card-subtle theme-text-muted uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4 font-bold">Rótulo (Label)</th>
                   <th className="py-3 px-4 font-bold">Chave Interna</th>
@@ -281,13 +280,13 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
                   <th className="py-3 px-4 font-bold text-right">Ação</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60">
+              <tbody className="divide-y theme-border">
                 {customFields.map((f) => (
-                  <tr key={f.id} className="hover:bg-zinc-800/40">
-                    <td className="py-3 px-4 font-semibold text-white">{f.label}</td>
-                    <td className="py-3 px-4 font-mono text-zinc-400">{f.key}</td>
-                    <td className="py-3 px-4 text-indigo-300 uppercase font-mono">{f.field_type}</td>
-                    <td className="py-3 px-4 text-zinc-400">
+                  <tr key={f.id} className="hover:bg-zinc-500/10">
+                    <td className="py-3 px-4 font-semibold theme-text">{f.label}</td>
+                    <td className="py-3 px-4 font-mono theme-text-muted">{f.key}</td>
+                    <td className="py-3 px-4 text-indigo-500 uppercase font-mono">{f.field_type}</td>
+                    <td className="py-3 px-4 theme-text-muted">
                       {f.options && f.options.length > 0 ? f.options.join(', ') : '-'}
                     </td>
                     <td className="py-3 px-4 text-right">
@@ -295,7 +294,7 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
                         onClick={() => {
                           if (confirm(`Excluir definição do campo "${f.label}"?`)) onDeleteCustomField(f.id);
                         }}
-                        className="p-1 text-zinc-400 hover:text-red-400"
+                        className="p-1 theme-text-muted hover:text-red-500"
                         title="Excluir Campo"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -307,7 +306,7 @@ export const MetadataManager: React.FC<MetadataManagerProps> = ({
             </table>
           </div>
         ) : (
-          <p className="text-xs text-zinc-500 italic">Nenhum campo personalizado cadastrado.</p>
+          <p className="text-xs theme-text-muted italic">Nenhum campo personalizado cadastrado.</p>
         )}
       </div>
 
