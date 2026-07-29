@@ -8,3 +8,4 @@ export * from './jobs';
 export * from './categories';
 export * from './tags';
 export * from './fields';
+export * from './clients';

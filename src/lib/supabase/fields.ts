@@ -25,6 +25,23 @@ export async function createCustomFieldDefinition(
   return data;
 }
 
+export async function updateCustomFieldDefinition(
+  id: string,
+  label: string,
+  key: string,
+  field_type: CustomFieldDefinition['field_type'],
+  options: string[] = [],
+): Promise<CustomFieldDefinition> {
+  const { data, error } = await supabase!
+    .from('custom_field_definitions')
+    .update({ label, key, field_type, options })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function deleteCustomFieldDefinition(id: string): Promise<void> {
   const { error } = await supabase!
     .from('custom_field_definitions')

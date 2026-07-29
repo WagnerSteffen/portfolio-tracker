@@ -15,6 +15,9 @@ import {
   Check,
   Sparkles,
   Link as LinkIcon,
+  Newspaper,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import { YouTubeIcon } from '@/components/icons/YouTubeIcon';
 import {
@@ -25,6 +28,7 @@ import {
   CustomFieldDefinition,
   PerformerType,
   JobStatus,
+  ReportageLink,
   PERFORMER_LABELS,
   STATUS_LABELS,
   getJobPerformers,
@@ -32,9 +36,10 @@ import {
 import { CategoryTagModal } from './CategoryTagModal';
 import { CustomFieldModal } from './CustomFieldModal';
 import { formatExternalUrl } from '@/utils/url';
+import { generateLinkMetadata } from '@/utils/url-title';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { ClientCombobox } from '@/components/ui/ClientCombobox';
-import { getJobs } from '@/lib/supabase/api';
+import { getJobs, getClients, createClient } from '@/lib/supabase/api';
 
 interface JobFormProps {
   initialData?: Job | null;
@@ -73,7 +78,11 @@ export const JobForm: React.FC<JobFormProps> = ({
   };
 
   const [title, setTitle] = useState(initialData?.title || '');
-  const [clientName, setClientName] = useState(initialData?.client_name || '');
+  const [clientName, setClientName] = useState(
+    initialData?.clients && initialData.clients.length > 0
+      ? initialData.clients.map((c) => c.name).join(', ')
+      : initialData?.client_name || ''
+  );
   const [performers, setPerformers] = useState<PerformerType[]>(
     getJobPerformers(initialData?.performer)
   );
@@ -109,12 +118,14 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   useEffect(() => {
     let isMounted = true;
-    getJobs()
-      .then((jobsList) => {
+    Promise.all([getJobs(), getClients().catch(() => [])])
+      .then(([jobsList, clientsList]) => {
         if (!isMounted) return;
-        const uniqueClients = Array.from(
-          new Set(jobsList.map((j) => j.client_name?.trim()).filter(Boolean) as string[])
-        ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        const jobClientNames = jobsList.map((j) => j.client_name?.trim()).filter(Boolean) as string[];
+        const dbClientNames = clientsList.map((c) => c.name.trim()).filter(Boolean);
+        const uniqueClients = Array.from(new Set([...dbClientNames, ...jobClientNames])).sort((a, b) =>
+          a.localeCompare(b, 'pt-BR')
+        );
         setClientOptions(uniqueClients);
       })
       .catch((err) => console.error('Error fetching clients for combobox:', err));
@@ -158,9 +169,90 @@ export const JobForm: React.FC<JobFormProps> = ({
     initialData?.tags?.map((t) => t.id) || []
   );
 
-  const [customValues, setCustomValues] = useState<Record<string, any>>(
+  const [customValues, setCustomValues] = useState<Record<string, unknown>>(
     initialData?.custom_fields || {}
   );
+
+  const [reportageLinks, setReportageLinks] = useState<
+    Array<{ id?: string; url: string; title: string; provider?: string | null; published_date?: string | null; loading?: boolean }>
+  >(
+    initialData?.reportage_links?.map((rl) => ({
+      id: rl.id,
+      url: rl.url,
+      title: rl.title,
+      provider: rl.provider,
+      published_date: rl.published_date,
+    })) || []
+  );
+
+  const addReportageLink = () => {
+    setReportageLinks((prev) => [
+      ...prev,
+      { url: '', title: '', provider: '', published_date: '' },
+    ]);
+  };
+
+  const removeReportageLink = (index: number) => {
+    setReportageLinks((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const updateReportageLink = (
+    index: number,
+    field: 'url' | 'title' | 'published_date',
+    value: string
+  ) => {
+    setReportageLinks((prev) => {
+      const next = [...prev];
+      const current = { ...next[index], [field]: value };
+
+      if (field === 'url' && value.trim()) {
+        const meta = generateLinkMetadata(value, current.title, current.published_date || undefined);
+        if (!current.title) current.title = meta.title;
+        current.provider = meta.provider;
+        if (!current.published_date && meta.published_date) {
+          current.published_date = meta.published_date;
+        }
+      }
+
+      next[index] = current;
+      return next;
+    });
+  };
+
+  const fetchMetadataForLink = async (index: number) => {
+    const link = reportageLinks[index];
+    if (!link || !link.url.trim()) return;
+
+    setReportageLinks((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], loading: true };
+      return next;
+    });
+
+    try {
+      const res = await fetch(`/api/utils/metadata?url=${encodeURIComponent(link.url)}`);
+      const json = await res.json();
+      if (json.success && json.data) {
+        setReportageLinks((prev) => {
+          const next = [...prev];
+          next[index] = {
+            ...next[index],
+            title: json.data.title || next[index].title,
+            provider: json.data.provider || next[index].provider,
+            published_date: json.data.published_date || next[index].published_date,
+            loading: false,
+          };
+          return next;
+        });
+      }
+    } catch {
+      setReportageLinks((prev) => {
+        const next = [...prev];
+        next[index] = { ...next[index], loading: false };
+        return next;
+      });
+    }
+  };
 
   const [modalType, setModalType] = useState<'category' | 'tag' | 'custom_field' | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -178,7 +270,7 @@ export const JobForm: React.FC<JobFormProps> = ({
     );
   };
 
-  const handleCustomValueChange = (key: string, val: any) => {
+  const handleCustomValueChange = (key: string, val: unknown) => {
     setCustomValues((prev) => ({ ...prev, [key]: val }));
   };
 
@@ -188,8 +280,27 @@ export const JobForm: React.FC<JobFormProps> = ({
 
     setSubmitting(true);
     try {
+      let client_ids: string[] = [];
+      if (clientName.trim()) {
+        const clientsList = await getClients().catch(() => []);
+        const existing = clientsList.find(
+          (c) => c.name.toLowerCase() === clientName.trim().toLowerCase()
+        );
+        if (existing) {
+          client_ids = [existing.id];
+        } else {
+          try {
+            const newClient = await createClient(clientName.trim());
+            client_ids = [newClient.id];
+          } catch {
+            // client creation fallback
+          }
+        }
+      }
+
       const formData: JobFormData = {
         title: title.trim(),
+        client_ids,
         client_name: clientName.trim(),
         performer: performers.join(','),
         job_date: jobDate,
@@ -202,6 +313,15 @@ export const JobForm: React.FC<JobFormProps> = ({
         category_ids: selectedCategoryIds,
         tag_ids: selectedTagIds,
         custom_fields: customValues,
+        reportage_links: reportageLinks
+          .filter((l) => Boolean(l.url.trim()))
+          .map((l) => ({
+            id: l.id,
+            url: formatExternalUrl(l.url),
+            title: l.title.trim() || 'Reportagem',
+            provider: l.provider,
+            published_date: l.published_date || null,
+          })),
       };
 
       await onSaveJob(formData);
@@ -221,6 +341,7 @@ export const JobForm: React.FC<JobFormProps> = ({
         setSelectedCategoryIds([]);
         setSelectedTagIds([]);
         setCustomValues({});
+        setReportageLinks([]);
       }
     } catch (err) {
       console.error(err);
@@ -233,7 +354,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header Banner */}
-      <div className="glass-panel p-6 rounded-2xl border theme-border flex items-center justify-between">
+      <div className="glass-panel p-6 rounded-2xl border theme-border flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold theme-text flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-indigo-500" />
@@ -522,6 +643,118 @@ export const JobForm: React.FC<JobFormProps> = ({
               />
             </div>
           </div>
+
+          {/* Sub-Section: Links de Reportagem / Mídia */}
+          <div className="pt-4 border-t theme-border space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold theme-text uppercase tracking-wider flex items-center gap-1.5">
+                <Newspaper className="h-4 w-4 text-indigo-500" />
+                Links de Reportagem / Matérias na Mídia
+              </label>
+              <button
+                type="button"
+                onClick={addReportageLink}
+                className="text-xs font-medium text-indigo-500 flex items-center gap-1 bg-indigo-500/10 px-2.5 py-1 rounded-lg transition hover:bg-indigo-500/20"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Adicionar Reportagem</span>
+              </button>
+            </div>
+
+            {reportageLinks.length > 0 ? (
+              <div className="space-y-3">
+                {reportageLinks.map((link, index) => (
+                  <div
+                    key={index}
+                    className="p-3.5 rounded-xl border theme-border theme-card-subtle space-y-3 relative group"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold theme-text-muted uppercase tracking-wider">
+                        Reportagem #{index + 1} {link.provider ? `(${link.provider})` : ''}
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        {link.url.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => fetchMetadataForLink(index)}
+                            disabled={link.loading}
+                            className="text-[11px] text-indigo-400 hover:underline flex items-center gap-1 disabled:opacity-50"
+                            title="Buscar título e data automaticamente da página"
+                          >
+                            {link.loading ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Sparkles className="h-3 w-3 text-indigo-400" />
+                            )}
+                            <span>{link.loading ? 'Buscando...' : 'Obter Metadados'}</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeReportageLink(index)}
+                          className="p-1 text-zinc-400 hover:text-red-500 rounded-lg transition"
+                          title="Remover link"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                      {/* URL input */}
+                      <div className="md:col-span-6">
+                        <label className="block text-[11px] font-medium theme-text-muted mb-1">
+                          URL da Notícia / Matéria *
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="https://g1.globo.com/sc/... ou https://nsctotal.com.br/..."
+                          value={link.url}
+                          onChange={(e) => updateReportageLink(index, 'url', e.target.value)}
+                          onBlur={() => {
+                            if (link.url.trim() && !link.title) {
+                              fetchMetadataForLink(index);
+                            }
+                          }}
+                          className="w-full theme-input border rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-indigo-500"
+                        />
+                      </div>
+
+                      {/* Title input */}
+                      <div className="md:col-span-4">
+                        <label className="block text-[11px] font-medium theme-text-muted mb-1">
+                          Título Exibido (Autogerado ou Manual)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ex: Matéria sobre Exposição no G1"
+                          value={link.title}
+                          onChange={(e) => updateReportageLink(index, 'title', e.target.value)}
+                          className="w-full theme-input border rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-indigo-500"
+                        />
+                      </div>
+
+                      {/* Date input */}
+                      <div className="md:col-span-2">
+                        <label className="block text-[11px] font-medium theme-text-muted mb-1">
+                          Data da Matéria
+                        </label>
+                        <DatePicker
+                          value={link.published_date || ''}
+                          onChange={(val) => updateReportageLink(index, 'published_date', val)}
+                          placeholder="dd/mm/aaaa"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs theme-text-muted italic py-1">
+                Nenhum link de reportagem adicionado ainda. Clique em &quot;Adicionar Reportagem&quot; acima para incluir matérias na mídia.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Section 4: Dynamic Custom Fields */}
@@ -552,7 +785,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                   {field.field_type === 'text' && (
                     <input
                       type="text"
-                      value={customValues[field.key] || ''}
+                      value={String(customValues[field.key] ?? '')}
                       onChange={(e) => handleCustomValueChange(field.key, e.target.value)}
                       className="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none"
                     />
@@ -561,18 +794,16 @@ export const JobForm: React.FC<JobFormProps> = ({
                   {field.field_type === 'number' && (
                     <input
                       type="number"
-                      value={customValues[field.key] || ''}
+                      value={String(customValues[field.key] ?? '')}
                       onChange={(e) => handleCustomValueChange(field.key, e.target.value)}
                       className="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none"
                     />
                   )}
 
                   {field.field_type === 'date' && (
-                    <input
-                      type="date"
-                      value={customValues[field.key] || ''}
-                      onChange={(e) => handleCustomValueChange(field.key, e.target.value)}
-                      className="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none"
+                    <DatePicker
+                      value={String(customValues[field.key] ?? '')}
+                      onChange={(val) => handleCustomValueChange(field.key, val)}
                     />
                   )}
 
@@ -590,7 +821,7 @@ export const JobForm: React.FC<JobFormProps> = ({
 
                   {field.field_type === 'select' && (
                     <select
-                      value={customValues[field.key] || ''}
+                      value={String(customValues[field.key] ?? '')}
                       onChange={(e) => handleCustomValueChange(field.key, e.target.value)}
                       className="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none"
                     >
@@ -627,7 +858,7 @@ export const JobForm: React.FC<JobFormProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end space-x-4 pt-4">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4">
           {onCancel && (
             <button
               type="button"

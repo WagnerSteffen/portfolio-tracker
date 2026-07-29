@@ -10,6 +10,7 @@ import {
   Trash2,
   Eye,
   UserCheck,
+  Newspaper,
 } from 'lucide-react';
 import { YouTubeIcon } from '@/components/icons/YouTubeIcon';
 import {
@@ -80,9 +81,9 @@ export const JobCard: React.FC<JobCardProps> = ({
           {job.title}
         </h3>
 
-        {job.client_name && (
+        {(job.client_name || (job.clients && job.clients.length > 0)) && (
           <p className="text-xs theme-text-muted font-medium">
-            Cliente: <span className="theme-text font-semibold">{job.client_name}</span>
+            Cliente: <span className="theme-text font-semibold">{job.clients && job.clients.length > 0 ? job.clients.map(c => c.name).join(', ') : job.client_name}</span>
           </p>
         )}
       </div>
@@ -173,6 +174,16 @@ export const JobCard: React.FC<JobCardProps> = ({
               <YouTubeIcon className="h-4 w-4" />
             </span>
           )}
+
+          {job.reportage_links && job.reportage_links.length > 0 && (
+            <span
+              className="p-1.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 rounded-lg flex items-center space-x-1"
+              title={`${job.reportage_links.length} reportagem(ns) na mídia`}
+            >
+              <Newspaper className="h-4 w-4" />
+              <span className="text-[10px] font-bold">{job.reportage_links.length}</span>
+            </span>
+          )}
         </div>
 
         {/* Action icons */}
@@ -200,9 +211,7 @@ export const JobCard: React.FC<JobCardProps> = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              if (confirm(`Tem certeza que deseja excluir "${job.title}"?`)) {
-                onDelete(job.id);
-              }
+              onDelete(job.id);
             }}
             className="p-1.5 theme-text-muted hover:text-red-500 hover:bg-zinc-500/10 rounded-lg transition"
             title="Excluir Trabalho"

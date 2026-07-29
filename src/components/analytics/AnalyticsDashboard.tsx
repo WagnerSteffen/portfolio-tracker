@@ -182,7 +182,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <User className="h-4 w-4 text-indigo-500" />
             Distribuição por Profissional / Empresa
           </h3>
-          <div className="h-64 w-full">
+          <div className="h-48 sm:h-64 w-full">
             {performerData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -217,7 +217,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <TrendingUp className="h-4 w-4 text-indigo-500" />
             Evolução de Projetos por Mês
           </h3>
-          <div className="h-64 w-full">
+          <div className="h-48 sm:h-64 w-full">
             {timelineChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={timelineChartData}>
@@ -242,12 +242,12 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <Award className="h-4 w-4 text-indigo-500" />
             Volume por Categoria Comercial
           </h3>
-          <div className="h-64 w-full">
+          <div className="h-48 sm:h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={categoryChartData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                 <XAxis type="number" stroke="var(--text-muted)" fontSize={11} />
-                <YAxis dataKey="name" type="category" stroke="var(--text-muted)" fontSize={11} width={100} />
+                <YAxis dataKey="name" type="category" stroke="var(--text-muted)" fontSize={11} width={80} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="Trabalhos" fill="#10b981" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -261,11 +261,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <Award className="h-4 w-4 text-purple-500" />
             Tags Mais Frequentes
           </h3>
-          <div className="h-64 w-full">
+          <div className="h-48 sm:h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={tagChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} interval={0} />
+                <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} interval="preserveStartEnd" />
                 <YAxis stroke="var(--text-muted)" fontSize={11} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="Trabalhos" fill="#8b5cf6" radius={[4, 4, 0, 0]} />

@@ -45,6 +45,16 @@ export const STATUS_LABELS: Record<JobStatus, { label: string; color: string }> 
   cancelled: { label: 'Cancelado', color: 'bg-red-500/10 text-red-400 border-red-500/30' }
 };
 
+export interface Client {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface CommercialCategory {
   id: string;
   name: string;
@@ -70,9 +80,20 @@ export interface CustomFieldDefinition {
   created_at?: string;
 }
 
+export interface ReportageLink {
+  id?: string;
+  url: string;
+  title: string;
+  provider?: string | null;
+  published_date?: string | null;
+  created_at?: string;
+}
+
 export interface Job {
   id: string;
   title: string;
+  clients?: Client[];
+  client_ids?: string[];
   client_name?: string | null;
   performer: PerformerType | string;
   job_date: string;
@@ -82,16 +103,18 @@ export interface Job {
   value: number;
   status: JobStatus;
   description?: string | null;
-  custom_fields: Record<string, any>;
+  custom_fields: Record<string, unknown>;
   created_at?: string;
   updated_at?: string;
   categories?: CommercialCategory[];
   tags?: JobTag[];
+  reportage_links?: ReportageLink[];
 }
 
 export interface JobFormData {
   title: string;
-  client_name: string;
+  client_ids: string[];
+  client_name?: string;
   performer: PerformerType | string;
   job_date: string;
   location: string;
@@ -102,5 +125,12 @@ export interface JobFormData {
   description: string;
   category_ids: string[];
   tag_ids: string[];
-  custom_fields: Record<string, any>;
+  custom_fields: Record<string, unknown>;
+  reportage_links?: Array<{
+    id?: string;
+    url: string;
+    title: string;
+    provider?: string | null;
+    published_date?: string | null;
+  }>;
 }

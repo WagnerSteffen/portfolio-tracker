@@ -18,6 +18,7 @@ import {
   User,
   Tag,
   Folder,
+  Newspaper,
 } from 'lucide-react';
 import { YouTubeIcon } from '@/components/icons/YouTubeIcon';
 import {
@@ -35,6 +36,7 @@ import { JobDetailModal } from './JobDetailModal';
 import { formatExternalUrl } from '@/utils/url';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { CustomSelect, SelectOption } from '@/components/ui/Select';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface JobsExplorerProps {
   jobs: Job[];
@@ -77,6 +79,7 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
   const [showFiltersMobile, setShowFiltersMobile] = useState(false);
 
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [deletingJob, setDeletingJob] = useState<Job | null>(null);
 
   // Extract unique available years from jobs
   const availableYears = useMemo(() => {
@@ -138,7 +141,10 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
         if (searchTerm) {
           const term = searchTerm.toLowerCase();
           const matchesTitle = job.title.toLowerCase().includes(term);
-          const matchesClient = job.client_name?.toLowerCase().includes(term);
+          const clientNames = (job.clients && job.clients.length > 0
+            ? job.clients.map((c) => c.name).join(' ')
+            : job.client_name || '').toLowerCase();
+          const matchesClient = clientNames.includes(term);
           const matchesLocation = job.location?.toLowerCase().includes(term);
           const matchesDesc = job.description?.toLowerCase().includes(term);
           if (!matchesTitle && !matchesClient && !matchesLocation && !matchesDesc) {
@@ -324,7 +330,7 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
           </div>
 
           {/* Controls: View Mode, Sort, Mobile Filter, Add New */}
-          <div className="flex items-center space-x-2 shrink-0">
+          <div className="flex items-center flex-wrap gap-2 shrink-0">
             {/* View Mode Toggle */}
             <div className="flex items-center theme-input p-1 rounded-xl border theme-border">
               <button
@@ -348,7 +354,7 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
             </div>
 
             {/* Sort Select */}
-            <div className="w-40">
+            <div className="w-36 sm:w-40">
               <CustomSelect
                 value={sortBy}
                 onChange={(val) => setSortBy(val as SortOption)}
@@ -391,7 +397,7 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 items-start">
             {/* 1. Performer Filter Dropdown */}
             <div>
               <span className="text-[11px] theme-text-muted font-semibold uppercase block mb-1.5 flex items-center gap-1">
@@ -539,7 +545,7 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
                 key={job.id}
                 job={job}
                 onEdit={onEditJob}
-                onDelete={onDeleteJob}
+                onDelete={() => setDeletingJob(job)}
                 onViewDetails={setSelectedJob}
               />
             ))}
@@ -554,10 +560,10 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
                     <th className="py-3.5 px-4 font-bold">Título / Cliente</th>
                     <th className="py-3.5 px-4 font-bold">Executado por</th>
                     <th className="py-3.5 px-4 font-bold">Data</th>
-                    <th className="py-3.5 px-4 font-bold">Local</th>
-                    <th className="py-3.5 px-4 font-bold">Categorias</th>
+                    <th className="hidden sm:table-cell py-3.5 px-4 font-bold">Local</th>
+                    <th className="hidden md:table-cell py-3.5 px-4 font-bold">Categorias</th>
                     <th className="py-3.5 px-4 font-bold">Valor</th>
-                    <th className="py-3.5 px-4 font-bold">Links</th>
+                    <th className="hidden sm:table-cell py-3.5 px-4 font-bold">Links</th>
                     <th className="py-3.5 px-4 font-bold text-right">Ações</th>
                   </tr>
                 </thead>
@@ -569,17 +575,22 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
                       currency: 'BRL',
                     }).format(job.value || 0);
 
+                    const clientDisplay = job.clients && job.clients.length > 0
+                      ? job.clients.map((c) => c.name).join(', ')
+                      : job.client_name;
+
                     return (
-                      <tr key={job.id} className="hover:bg-zinc-500/10 transition">
+                      <tr
+                        key={job.id}
+                        onClick={() => setSelectedJob(job)}
+                        className="hover:bg-zinc-500/10 transition cursor-pointer select-none"
+                      >
                         <td className="py-3 px-4">
-                          <span
-                            onClick={() => setSelectedJob(job)}
-                            className="font-bold theme-text hover:text-indigo-500 cursor-pointer block"
-                          >
+                          <span className="font-bold theme-text hover:text-indigo-500 transition-colors block">
                             {job.title}
                           </span>
-                          {job.client_name && (
-                            <span className="text-[11px] theme-text-muted block">{job.client_name}</span>
+                          {clientDisplay && (
+                            <span className="text-[11px] theme-text-muted block">{clientDisplay}</span>
                           )}
                         </td>
                         <td className="py-3 px-4">
@@ -600,10 +611,10 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
                         <td className="py-3 px-4 theme-text-muted whitespace-nowrap">
                           {job.job_date ? new Date(job.job_date + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}
                         </td>
-                        <td className="py-3 px-4 theme-text-muted max-w-[150px] truncate">
+                        <td className="hidden sm:table-cell py-3 px-4 theme-text-muted max-w-[150px] truncate">
                           {job.location || '-'}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="hidden md:table-cell py-3 px-4">
                           <div className="flex flex-wrap gap-1">
                             {job.categories?.map((c) => (
                               <span
@@ -619,8 +630,8 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
                         <td className="py-3 px-4 font-semibold text-emerald-500 whitespace-nowrap">
                           {job.value > 0 ? formattedValue : '-'}
                         </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center space-x-1.5">
+                        <td className="hidden sm:table-cell py-3 px-4">
+                          <div className="flex items-center space-x-2">
                             {job.drive_url && (
                               <a
                                 href={formatExternalUrl(job.drive_url)}
@@ -645,27 +656,43 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
                                 <YouTubeIcon className="h-4 w-4" />
                               </a>
                             )}
+                            {job.reportage_links && job.reportage_links.length > 0 && (
+                              <span
+                                className="text-indigo-400 flex items-center space-x-1"
+                                title={`${job.reportage_links.length} reportagem(ns) na mídia`}
+                              >
+                                <Newspaper className="h-4 w-4 text-indigo-400" />
+                                <span className="text-[10px] font-bold">{job.reportage_links.length}</span>
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end space-x-1">
                             <button
-                              onClick={() => setSelectedJob(job)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedJob(job);
+                              }}
                               className="p-1 theme-text-muted hover:theme-text"
                               title="Ver Detalhes"
                             >
                               <Eye className="h-4 w-4" />
                             </button>
                             <button
-                              onClick={() => onEditJob(job)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEditJob(job);
+                              }}
                               className="p-1 theme-text-muted hover:text-indigo-500"
                               title="Editar"
                             >
                               <Edit2 className="h-4 w-4" />
                             </button>
                             <button
-                              onClick={() => {
-                                if (confirm(`Deseja excluir "${job.title}"?`)) onDeleteJob(job.id);
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeletingJob(job);
                               }}
                               className="p-1 theme-text-muted hover:text-red-500"
                               title="Excluir"
@@ -711,6 +738,27 @@ export const JobsExplorer: React.FC<JobsExplorerProps> = ({
         customFields={customFields}
         onClose={() => setSelectedJob(null)}
         onEdit={onEditJob}
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingJob)}
+        title="Excluir Trabalho"
+        description={
+          deletingJob
+            ? `Tem certeza que deseja excluir "${deletingJob.title}"? Esta ação removerá permanentemente o trabalho do portfólio.`
+            : ''
+        }
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={() => {
+          if (deletingJob) {
+            onDeleteJob(deletingJob.id);
+            setDeletingJob(null);
+          }
+        }}
+        onClose={() => setDeletingJob(null)}
       />
     </div>
   );

@@ -1,24 +1,38 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Sliders } from 'lucide-react';
-import { CustomFieldType } from '@/types/database';
+import { X, Check, Sliders } from 'lucide-react';
+import { CustomFieldDefinition, CustomFieldType } from '@/types/database';
 
 interface CustomFieldModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialData?: CustomFieldDefinition | null;
   onSave: (label: string, key: string, fieldType: CustomFieldType, options: string[]) => Promise<void>;
 }
 
 export const CustomFieldModal: React.FC<CustomFieldModalProps> = ({
   isOpen,
   onClose,
+  initialData,
   onSave,
 }) => {
   const [label, setLabel] = useState('');
   const [fieldType, setFieldType] = useState<CustomFieldType>('text');
   const [optionsStr, setOptionsStr] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (initialData) {
+      setLabel(initialData.label || '');
+      setFieldType(initialData.field_type || 'text');
+      setOptionsStr(initialData.options ? initialData.options.join(', ') : '');
+    } else {
+      setLabel('');
+      setFieldType('text');
+      setOptionsStr('');
+    }
+  }, [initialData, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -37,7 +51,7 @@ export const CustomFieldModal: React.FC<CustomFieldModalProps> = ({
     e.preventDefault();
     if (!label.trim()) return;
 
-    const key = label
+    const key = initialData?.key || label
       .trim()
       .toLowerCase()
       .normalize('NFD')
@@ -74,7 +88,9 @@ export const CustomFieldModal: React.FC<CustomFieldModalProps> = ({
         <div className="flex items-center justify-between border-b theme-border pb-3">
           <div className="flex items-center space-x-2">
             <Sliders className="h-5 w-5 text-indigo-500" />
-            <h3 className="text-lg font-bold theme-text">Novo Campo Personalizado</h3>
+            <h3 className="text-lg font-bold theme-text">
+              {initialData ? 'Editar Campo Personalizado' : 'Novo Campo Personalizado'}
+            </h3>
           </div>
           <button
             onClick={onClose}
@@ -144,8 +160,8 @@ export const CustomFieldModal: React.FC<CustomFieldModalProps> = ({
               disabled={loading || !label.trim()}
               className="flex items-center space-x-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition disabled:opacity-50"
             >
-              <Plus className="h-4 w-4" />
-              <span>{loading ? 'Salvando...' : 'Adicionar Campo'}</span>
+              <Check className="h-4 w-4" />
+              <span>{loading ? 'Salvando...' : initialData ? 'Salvar Alterações' : 'Adicionar Campo'}</span>
             </button>
           </div>
         </form>

@@ -17,6 +17,7 @@ import {
 import { YouTubeIcon } from '@/components/icons/YouTubeIcon';
 import { Job, PERFORMER_LABELS, STATUS_LABELS, CustomFieldDefinition, getJobPerformers } from '@/types/database';
 import { formatExternalUrl } from '@/utils/url';
+import { CollapsibleLinksGroup } from '@/components/ui/CollapsibleLinksGroup';
 
 interface JobDetailModalProps {
   job: Job | null;
@@ -85,9 +86,9 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
               </span>
             </div>
             <h2 className="text-xl font-bold theme-text">{job.title}</h2>
-            {job.client_name && (
+            {(job.client_name || (job.clients && job.clients.length > 0)) && (
               <p className="text-sm theme-text-muted">
-                Cliente: <span className="theme-text font-medium">{job.client_name}</span>
+                Cliente: <span className="theme-text font-medium">{job.clients && job.clients.length > 0 ? job.clients.map(c => c.name).join(', ') : job.client_name}</span>
               </p>
             )}
           </div>
@@ -100,7 +101,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
         </div>
 
         {/* Quick Meta Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 theme-card-subtle p-4 rounded-2xl border theme-border text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 theme-card-subtle p-4 rounded-2xl border theme-border text-xs">
           <div>
             <span className="theme-text-muted block mb-1">Data do Evento</span>
             <div className="flex items-center space-x-1.5 theme-text font-medium">
@@ -178,6 +179,17 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
               </div>
             )}
           </div>
+
+          {/* Reportage Links (Collapsible) */}
+          {job.reportage_links && job.reportage_links.length > 0 && (
+            <div className="pt-2">
+              <CollapsibleLinksGroup
+                title="Reportagens na Mídia"
+                links={job.reportage_links}
+                defaultOpen={true}
+              />
+            </div>
+          )}
         </div>
 
         {/* Categories & Tags */}

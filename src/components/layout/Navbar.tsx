@@ -44,20 +44,26 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo & Title */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('explorar')}>
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-rose-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <div className="flex items-center space-x-3 cursor-pointer min-w-0" onClick={() => setActiveTab('explorar')}>
+            <div className="relative h-10 w-10 shrink-0 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-rose-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
               <Camera className="h-5 w-5 text-white" />
+              {/* Mobile connection dot */}
+              <span
+                className={`lg:hidden absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-nav)] ${
+                  isConnected ? 'bg-emerald-400' : 'bg-amber-400'
+                }`}
+              />
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="text-base font-bold theme-text tracking-wide">
-                  Portfolio Database
+            <div className="min-w-0">
+              <div className="flex items-center space-x-2 min-w-0">
+                <h1 className="text-base font-bold theme-text tracking-wide truncate">
+                  Portfolio DB
                 </h1>
-                <span className="text-xs bg-indigo-500/20 text-indigo-500 font-medium px-2 py-0.5 rounded-full border border-indigo-500/30">
+                <span className="hidden sm:inline-flex shrink-0 text-xs bg-indigo-500/20 text-indigo-500 font-medium px-2 py-0.5 rounded-full border border-indigo-500/30">
                   Wagner & Aflora
                 </span>
               </div>
-              <p className="text-xs theme-text-muted">Wagner • Daiana • Aflora Espaço Criativo</p>
+              <p className="hidden sm:block text-xs theme-text-muted truncate">Wagner • Daiana • Aflora Espaço Criativo</p>
             </div>
           </div>
 
@@ -149,41 +155,41 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, jobsCou
       </div>
 
       {/* Mobile Navigation Bar */}
-      <div className="lg:hidden flex items-center justify-around theme-card border-t theme-border p-2">
+      <div className="lg:hidden flex items-center justify-around glass-panel border-t theme-border px-1 py-1.5">
         <button
           onClick={() => setActiveTab('explorar')}
-          className={`flex flex-col items-center p-1.5 text-xs ${
-            activeTab === 'explorar' ? 'text-indigo-600 font-semibold' : 'theme-text-muted'
+          className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl text-xs transition ${
+            activeTab === 'explorar' ? 'text-indigo-500 font-semibold bg-indigo-500/10' : 'theme-text-muted'
           }`}
         >
-          <FolderKanban className="h-4 w-4 mb-0.5" />
+          <FolderKanban className="h-5 w-5" />
           <span>Trabalhos</span>
         </button>
         <button
           onClick={() => setActiveTab('novo')}
-          className={`flex flex-col items-center p-1.5 text-xs ${
-            activeTab === 'novo' ? 'text-indigo-600 font-semibold' : 'theme-text-muted'
+          className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl text-xs transition ${
+            activeTab === 'novo' ? 'text-indigo-500 font-semibold bg-indigo-500/10' : 'theme-text-muted'
           }`}
         >
-          <PlusCircle className="h-4 w-4 mb-0.5" />
+          <PlusCircle className="h-5 w-5" />
           <span>Novo</span>
         </button>
         <button
           onClick={() => setActiveTab('analytics')}
-          className={`flex flex-col items-center p-1.5 text-xs ${
-            activeTab === 'analytics' ? 'text-indigo-600 font-semibold' : 'theme-text-muted'
+          className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl text-xs transition ${
+            activeTab === 'analytics' ? 'text-indigo-500 font-semibold bg-indigo-500/10' : 'theme-text-muted'
           }`}
         >
-          <BarChart3 className="h-4 w-4 mb-0.5" />
+          <BarChart3 className="h-5 w-5" />
           <span>Analytics</span>
         </button>
         <button
           onClick={() => setActiveTab('metadata')}
-          className={`flex flex-col items-center p-1.5 text-xs ${
-            activeTab === 'metadata' ? 'text-indigo-600 font-semibold' : 'theme-text-muted'
+          className={`flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl text-xs transition ${
+            activeTab === 'metadata' ? 'text-indigo-500 font-semibold bg-indigo-500/10' : 'theme-text-muted'
           }`}
         >
-          <Settings className="h-4 w-4 mb-0.5" />
+          <Settings className="h-5 w-5" />
           <span>Config</span>
         </button>
       </div>

@@ -12,6 +12,7 @@ import {
   CommercialCategory,
   JobTag,
   CustomFieldDefinition,
+  Client,
 } from "@/types/database";
 import {
   getJobs,
@@ -28,7 +29,12 @@ import {
   deleteJobTag,
   getCustomFieldDefinitions,
   createCustomFieldDefinition,
+  updateCustomFieldDefinition,
   deleteCustomFieldDefinition,
+  getClients,
+  createClient,
+  updateClient,
+  deleteClient,
 } from "@/lib/supabase/api";
 import { Loader2 } from "lucide-react";
 
@@ -47,6 +53,7 @@ export default function Home() {
   const [categories, setCategories] = useState<CommercialCategory[]>([]);
   const [tags, setTags] = useState<JobTag[]>([]);
   const [customFields, setCustomFields] = useState<CustomFieldDefinition[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
 
   // Job currently being edited in form tab
   const [editingJob, setEditingJob] = useState<Job | null>(null);
@@ -54,18 +61,20 @@ export default function Home() {
   // Load dataset
   const loadAllData = async () => {
     try {
-      const [fetchedJobs, fetchedCats, fetchedTags, fetchedFields] =
+      const [fetchedJobs, fetchedCats, fetchedTags, fetchedFields, fetchedClients] =
         await Promise.all([
           getJobs(),
           getCommercialCategories(),
           getJobTags(),
           getCustomFieldDefinitions(),
+          getClients(),
         ]);
 
       setJobs(fetchedJobs);
       setCategories(fetchedCats);
       setTags(fetchedTags);
       setCustomFields(fetchedFields);
+      setClients(fetchedClients);
     } catch (err) {
       console.error("Error loading portfolio database data:", err);
       showToast("Erro ao carregar os dados. Verifique a conexão com o Supabase.");
@@ -205,6 +214,24 @@ export default function Home() {
     }
   };
 
+  const handleUpdateCustomField = async (
+    id: string,
+    label: string,
+    key: string,
+    fieldType: CustomFieldDefinition["field_type"],
+    options: string[],
+  ) => {
+    try {
+      await updateCustomFieldDefinition(id, label, key, fieldType, options);
+      await loadAllData();
+      showToast("Campo personalizado atualizado!", 'success');
+    } catch (err) {
+      console.error("Error updating custom field:", err);
+      showToast("Erro ao atualizar campo personalizado.");
+      throw err;
+    }
+  };
+
   const handleDeleteCustomField = async (id: string) => {
     try {
       await deleteCustomFieldDefinition(id);
@@ -215,12 +242,48 @@ export default function Home() {
     }
   };
 
+  // Client Handlers
+  const handleCreateClient = async (data: { name: string; email?: string; phone?: string; notes?: string }) => {
+    try {
+      await createClient(data.name, data.email, data.phone, data.notes);
+      await loadAllData();
+      showToast("Cliente cadastrado com sucesso!", 'success');
+    } catch (err) {
+      console.error("Error creating client:", err);
+      showToast("Erro ao cadastrar cliente.");
+      throw err;
+    }
+  };
+
+  const handleUpdateClient = async (id: string, data: { name: string; email?: string; phone?: string; notes?: string }) => {
+    try {
+      await updateClient(id, data.name, data.email, data.phone, data.notes);
+      await loadAllData();
+      showToast("Cliente atualizado com sucesso!", 'success');
+    } catch (err) {
+      console.error("Error updating client:", err);
+      showToast("Erro ao atualizar cliente.");
+      throw err;
+    }
+  };
+
+  const handleDeleteClient = async (id: string) => {
+    try {
+      await deleteClient(id);
+      await loadAllData();
+      showToast("Cliente removido.", 'success');
+    } catch (err) {
+      console.error("Error deleting client:", err);
+      showToast("Erro ao remover cliente.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       {/* Toast Notification */}
       {toast && (
         <div
-          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-xl shadow-2xl text-sm font-medium border transition-all animate-in fade-in slide-in-from-bottom-4 duration-300 ${
+          className={`fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-xl shadow-2xl text-sm font-medium border transition-all animate-in fade-in slide-in-from-bottom-4 duration-300 ${
             toast.type === 'success'
               ? 'bg-emerald-950 border-emerald-500/30 text-emerald-300'
               : 'bg-red-950 border-red-500/30 text-red-300'
@@ -242,7 +305,7 @@ export default function Home() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 lg:py-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-64 space-y-4 text-zinc-400">
             <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
@@ -297,6 +360,7 @@ export default function Home() {
                 categories={categories}
                 tags={tags}
                 customFields={customFields}
+                clients={clients}
                 onCreateCategory={handleCreateCategory}
                 onUpdateCategory={handleUpdateCategory}
                 onDeleteCategory={handleDeleteCategory}
@@ -304,7 +368,11 @@ export default function Home() {
                 onUpdateTag={handleUpdateTag}
                 onDeleteTag={handleDeleteTag}
                 onCreateCustomField={handleCreateCustomField}
+                onUpdateCustomField={handleUpdateCustomField}
                 onDeleteCustomField={handleDeleteCustomField}
+                onCreateClient={handleCreateClient}
+                onUpdateClient={handleUpdateClient}
+                onDeleteClient={handleDeleteClient}
               />
             )}
           </>

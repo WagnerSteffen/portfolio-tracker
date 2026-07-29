@@ -1,34 +1,17 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
-  X,
-  Check,
-} from 'lucide-react';
-import {
-  format,
-  addMonths,
-  subMonths,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  isSameMonth,
-  isSameDay,
-  isToday,
-  parseISO,
-} from 'date-fns';
+import { Calendar as CalendarIcon, X, Check } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Calendar } from '@/components/ui/calendar';
 
 interface DatePickerProps {
   value: string; // YYYY-MM-DD
   onChange: (dateStr: string) => void;
   placeholder?: string;
   required?: boolean;
+  className?: string;
 }
 
 export const DatePicker: React.FC<DatePickerProps> = ({
@@ -36,26 +19,21 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   onChange,
   placeholder = 'Selecione uma data...',
   required = false,
+  className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Parse current selected date or fallback to today
-  const selectedDate = value ? parseISO(value) : null;
-  const [currentMonth, setCurrentMonth] = useState<Date>(selectedDate || new Date());
+  // Parse current selected date safely
+  const selectedDate = value ? (() => {
+    try {
+      const parsed = parseISO(value);
+      return isNaN(parsed.getTime()) ? undefined : parsed;
+    } catch {
+      return undefined;
+    }
+  })() : undefined;
 
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Update current month view when value changes externally
-  useEffect(() => {
-    if (value) {
-      try {
-        const parsed = parseISO(value);
-        if (!isNaN(parsed.getTime())) {
-          setCurrentMonth(parsed);
-        }
-      } catch {}
-    }
-  }, [value]);
 
   // Close popover on outside click or ESC key
   useEffect(() => {
@@ -81,19 +59,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     };
   }, [isOpen]);
 
-  const handlePrevMonth = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentMonth((prev) => subMonths(prev, 1));
-  };
-
-  const handleNextMonth = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentMonth((prev) => addMonths(prev, 1));
-  };
-
-  const handleSelectDay = (day: Date) => {
-    const formattedDate = format(day, 'yyyy-MM-dd');
-    onChange(formattedDate);
+  const handleSelectDay = (date: Date | undefined) => {
+    if (!date) {
+      onChange('');
+    } else {
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      onChange(formattedDate);
+    }
     setIsOpen(false);
   };
 
@@ -101,26 +73,15 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     e.stopPropagation();
     const today = new Date();
     const formattedDate = format(today, 'yyyy-MM-dd');
-    setCurrentMonth(today);
     onChange(formattedDate);
     setIsOpen(false);
   };
-
-  // Generate calendar days matrix
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(monthStart);
-  const startDate = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sunday start
-  const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
-
-  const days = eachDayOfInterval({ start: startDate, end: endDate });
-
-  const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
   const formattedDisplay = value
     ? (() => {
         try {
           const parsed = parseISO(value);
-          return format(parsed, 'dd/MM/yyyy');
+          return isNaN(parsed.getTime()) ? value : format(parsed, 'dd/MM/yyyy');
         } catch {
           return value;
         }
@@ -128,7 +89,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     : '';
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className={`relative w-full ${className}`}>
       {/* Input Trigger Button */}
       <div
         onClick={() => setIsOpen(!isOpen)}
@@ -168,73 +129,21 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         className="opacity-0 absolute inset-0 pointer-events-none -z-10"
       />
 
-      {/* Shadcn-Style Calendar Popover */}
+      {/* Shadcn UI Calendar Popover */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-2 z-50 w-72 sm:w-80 theme-card border theme-border rounded-2xl p-4 shadow-2xl animate-fadeIn space-y-3">
-          {/* Calendar Header Navigation */}
-          <div className="flex items-center justify-between pb-2 border-b theme-border">
-            <span className="text-sm font-bold theme-text capitalize">
-              {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
-            </span>
-            <div className="flex items-center space-x-1">
-              <button
-                type="button"
-                onClick={handlePrevMonth}
-                className="p-1.5 rounded-lg theme-text-muted hover:theme-text hover:bg-zinc-500/10 transition"
-                title="Mês Anterior"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleNextMonth}
-                className="p-1.5 rounded-lg theme-text-muted hover:theme-text hover:bg-zinc-500/10 transition"
-                title="Próximo Mês"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Weekday Labels Header */}
-          <div className="grid grid-cols-7 gap-1 text-center">
-            {weekDays.map((d) => (
-              <span key={d} className="text-[11px] font-semibold theme-text-muted py-1">
-                {d}
-              </span>
-            ))}
-          </div>
-
-          {/* Days Grid */}
-          <div className="grid grid-cols-7 gap-1">
-            {days.map((day) => {
-              const isSelected = selectedDate && isSameDay(day, selectedDate);
-              const isCurrentMonth = isSameMonth(day, currentMonth);
-              const isTodayDay = isToday(day);
-
-              return (
-                <button
-                  key={day.toISOString()}
-                  type="button"
-                  onClick={() => handleSelectDay(day)}
-                  className={`h-9 w-full rounded-xl text-xs font-medium flex items-center justify-center transition ${
-                    isSelected
-                      ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30'
-                      : isTodayDay
-                      ? 'border border-indigo-500 text-indigo-500 font-bold hover:bg-indigo-500/10'
-                      : isCurrentMonth
-                      ? 'theme-text hover:bg-zinc-500/15'
-                      : 'theme-text-muted opacity-30 hover:opacity-60'
-                  }`}
-                >
-                  {format(day, 'd')}
-                </button>
-              );
-            })}
-          </div>
+        <div className="absolute left-0 top-full mt-2 z-50 theme-card border theme-border rounded-2xl p-3 shadow-2xl animate-fadeIn space-y-2 max-w-full">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleSelectDay}
+            captionLayout="dropdown"
+            startMonth={new Date(1980, 0)}
+            endMonth={new Date(2040, 11)}
+            locale={ptBR}
+          />
 
           {/* Footer Shortcuts */}
-          <div className="pt-2 border-t theme-border flex items-center justify-between text-xs">
+          <div className="pt-2 border-t theme-border flex items-center justify-between text-xs px-2">
             <button
               type="button"
               onClick={handleSelectToday}
